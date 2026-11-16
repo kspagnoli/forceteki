@@ -1,3 +1,5 @@
+import { modelAbilityKey, modelSource } from '../../model/ModelPrompt';
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { ISelectTargetResolver, ISelectUnlessTargetResolver, IChoicesInterface } from '../../../TargetInterfaces';
 import type { PlayerOrCardAbility } from '../PlayerOrCardAbility';
 import type { AbilityContext } from '../AbilityContext';
@@ -102,7 +104,7 @@ export class SelectTargetResolver extends TargetResolver<ISelectTargetResolver<A
         }
 
         if (this.properties.showUnresolvable) {
-            legalChoices = choices;
+            legalChoices = [...choices];
         }
 
         const handlers = legalChoices.map((choice) => {
@@ -140,7 +142,19 @@ export class SelectTargetResolver extends TargetResolver<ISelectTargetResolver<A
                     : this.properties.highlightCards
             );
 
+            const abilityKey = context.game.modelStateEnabled ? modelAbilityKey(context.ability, player) : undefined;
+            const stableChoices = this.properties.mode === TargetMode.SelectUnless || typeof this.properties.choices !== 'function';
+            const modelPrompt: IModelPrompt | undefined = abilityKey && stableChoices ? {
+                family: 'modal', rootActorId: context.player.id, source: modelSource(context.source, player), abilityKey,
+                options: legalChoices.map((choice, index) => ({
+                    kind: choices.includes(choice) ? 'choose_mode' : 'decline',
+                    optionKey: choices.includes(choice) ? `${abilityKey}.choice.${this.name}.${choices.indexOf(choice)}` : undefined,
+                    command: 'menuButton', args: [index],
+                    hasLegalEffects: choices.includes(choice) ? this.isChoiceLegal(choice, context) : undefined
+                }))
+            } : undefined;
             const promptProperties = Object.assign(baseProperties, {
+                modelPrompt,
                 activePromptTitle: activePromptTitleConcrete,
                 choices: legalChoices,
                 handlers,

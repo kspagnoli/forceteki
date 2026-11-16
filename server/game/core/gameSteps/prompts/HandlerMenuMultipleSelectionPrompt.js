@@ -18,7 +18,7 @@ class HandlerMenuMultipleSelectionPrompt extends HandlerMenuPrompt {
         const selectedOptions = [];
         properties.handlers = properties.choices.map((choice) => () => {
             if (selectedOptions.includes(choice)) {
-                selectedOptions.splice(selectedOptions.indexOf(choice));
+                selectedOptions.splice(selectedOptions.indexOf(choice), 1);
             } else {
                 selectedOptions.push(choice);
             }
@@ -60,6 +60,26 @@ class HandlerMenuMultipleSelectionPrompt extends HandlerMenuPrompt {
             promptUuid: this.uuid,
             promptType: this.properties.promptType
         };
+    }
+
+    /** @override */
+    getModelPrompt(player) {
+        const descriptor = super.getModelPrompt(player);
+        if (!descriptor || descriptor.options.length !== this.properties.choices.length - 1) {
+            return null;
+        }
+        // The engine permits temporary over-selection for finite caps; that contract needs a separate commit bound.
+        if (this.properties.maxSelected != null && this.properties.maxSelected < descriptor.options.length) {
+            return null;
+        }
+        const selected = this.selectedOptions.map((choice) => this.properties.choices.indexOf(choice));
+        const maximum = this.properties.maxSelected ?? descriptor.options.length;
+        return { ...descriptor, options: [...descriptor.options.filter((_option, index) => selected.includes(index) || selected.length < maximum)
+            .map((option) => ({ ...option, kind: selected.includes(option.args[0]) ? 'deselect' : 'select' })),
+        ...(selected.length <= maximum ? [{ kind: 'confirm', command: 'menuButton', args: [this.properties.choices.length - 1, this.uuid] }] : [])],
+        selection: { domain: 'options', min: 0, max: maximum, ordered: false, selectedIds: [],
+            selectedOptionKeys: selected.map((index) => descriptor.options[index].optionKey),
+            canConfirm: selected.length <= maximum, canCancel: false, canDecline: true } };
     }
 
     getCurrentSelection() {

@@ -1,3 +1,5 @@
+import { bindModelMenu } from '../../model/ModelPrompt';
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Game } from '../../Game';
 import type { Player } from '../../Player';
 import type { IPlayerPromptStateProperties } from '../../PlayerPromptState';
@@ -6,6 +8,7 @@ import type { IButtonWithSourceCard, ITriggerWindowSourceCard } from '../PromptI
 import { UiPrompt } from './UiPrompt';
 
 export interface IOptionalTriggerPromptProperties {
+    modelPrompt?: IModelPrompt;
 
     /** Card summary rendered as the Trigger button; omitted only if the ability has no card source. */
     sourceCard?: ITriggerWindowSourceCard;
@@ -34,6 +37,10 @@ export class OptionalTriggerPrompt extends UiPrompt {
 
         this.player = player;
         this.properties = properties;
+    }
+
+    public override getModelPrompt(_player: Player): IModelPrompt | null {
+        return bindModelMenu(this.properties.modelPrompt, this.uuid);
     }
 
     public override activeCondition(player: Player): boolean {

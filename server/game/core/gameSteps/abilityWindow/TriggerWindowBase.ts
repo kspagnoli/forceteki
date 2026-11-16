@@ -1,3 +1,4 @@
+import { modelAbilityKey, modelSource } from '../../model/ModelPrompt';
 import type { Player } from '../../Player';
 import type { GameEvent } from '../../event/GameEvent';
 import type { EventWindow } from '../../event/EventWindow';
@@ -308,6 +309,12 @@ export abstract class TriggerWindowBase extends BaseStep {
     /** Builds the resolution choice for a single triggered ability context. */
     protected buildContextChoice(context: TriggeredAbilityContext): IResolutionChoice {
         return {
+            getModelOption: this.game.modelStateEnabled ? (player) => {
+                const source = modelSource(context.source, player);
+                const abilityKey = modelAbilityKey(context.ability, player);
+                return source && abilityKey ? { kind: 'choose_ability', sourceId: source.instanceId, abilityKey,
+                    command: 'menuButton', args: [], quantity: 1 } : undefined;
+            } : undefined,
             getTitle: () => context.ability.getTitle(context),
             getSourceCard: () => getTriggerSourceCardSummary(context.source),
             hasLegalEffects: () => context.ability.hasAnyLegalEffects(context, SubStepCheck.All),
@@ -324,6 +331,12 @@ export abstract class TriggerWindowBase extends BaseStep {
     protected buildGroupChoice(members: TriggeredAbilityContext[]): IResolutionChoice {
         const first = members[0];
         return {
+            getModelOption: this.game.modelStateEnabled ? (player) => {
+                const source = modelSource(first.source, player);
+                const abilityKey = modelAbilityKey(first.ability, player);
+                return source && abilityKey ? { kind: 'choose_ability', sourceId: source.instanceId, abilityKey,
+                    command: 'menuButton', args: [], quantity: members.length } : undefined;
+            } : undefined,
             getTitle: () => this.getGroupingTitle(first),
             getSourceCard: () => getTriggerSourceCardSummary(first.source),
             hasLegalEffects: () => members.some((context) => context.ability.hasAnyLegalEffects(context, SubStepCheck.All)),
@@ -363,6 +376,7 @@ export abstract class TriggerWindowBase extends BaseStep {
             sourceCard: getTriggerSourceCardSummary(first.source),
             title: this.getGroupingTitle(first),
             remainingCount: members.length,
+            modelSource: this.game.modelStateEnabled ? modelSource(first.source, player) : undefined,
             onResolveNext: () => {
                 const next = this.unresolved.get(player)?.find((context) => this.getGroupKey(context) === groupKey);
                 if (next) {
@@ -480,6 +494,10 @@ export abstract class TriggerWindowBase extends BaseStep {
         this.game.promptWithHandlerMenu(activePlayer, {
             activePromptTitle: 'Both players have triggered abilities in response. Choose a player to resolve all of their abilities first:',
             waitingPromptTitle: 'Waiting for opponent to choose a player to resolve their triggers first',
+            modelPrompt: this.game.modelStateEnabled ? { family: 'trigger_order', rootActorId: activePlayer.id, options: [
+                { kind: 'choose_option', optionKey: 'player.self', command: 'menuButton', args: [0] },
+                { kind: 'choose_option', optionKey: 'player.opponent', command: 'menuButton', args: [1] }
+            ] } : undefined,
             choices: ['You', 'Opponent'],
             handlers: [
                 () => {

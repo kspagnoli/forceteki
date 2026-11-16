@@ -1,3 +1,4 @@
+import { modelAbilityKey, modelSource } from '../core/model/ModelPrompt';
 import { AbilityRestriction, EffectName, PlayType, RelativePlayer, ZoneName } from '../core/Constants.js';
 import type { Restriction } from '../core/ongoingEffect/effectImpl/Restriction.js';
 import { Contract } from '../core/utils/Contract.js';
@@ -130,6 +131,12 @@ export abstract class PlayEventActionBase extends PlayCardAction {
 
             this.game.promptWithHandlerMenu(context.player, {
                 activePromptTitle: `Playing ${context.source.title} will have no effect${reason.length > 0 ? ` ${reason}` : ''}. Are you sure you want to play it?`,
+                modelPrompt: this.game.modelStateEnabled ? { family: 'no_effect_confirmation',
+                    rootActorId: context.player.id, source: modelSource(context.source, context.player),
+                    abilityKey: modelAbilityKey(context.ability, context.player), options: [
+                        { kind: 'accept', command: 'menuButton', args: [0], optionKey: 'confirmation.proceed', costUnknown: true, hasLegalEffects: false },
+                        { kind: 'cancel', command: 'menuButton', args: [1] }
+                    ] } : undefined,
                 choices: ['Play anyway', 'Cancel'],
                 handlers: [
                     () => undefined,

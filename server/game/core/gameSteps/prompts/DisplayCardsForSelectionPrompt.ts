@@ -1,3 +1,4 @@
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import * as Util from '../../../../Util';
 import type { Card } from '../../card/Card';
 import type { Game } from '../../Game';
@@ -74,6 +75,26 @@ export class DisplayCardsForSelectionPrompt extends DisplayCardPrompt<IDisplayCa
 
     protected override defaultProperties() {
         return {};
+    }
+
+    public override getModelPrompt(player: Player): IModelPrompt {
+        const options: IModelPrompt['options'] = [];
+        for (const { card, selectionState } of this.displayCards) {
+            const selected = selectionState === DisplayCardSelectionState.Selected;
+            if (selected || (selectionState === DisplayCardSelectionState.Selectable && this.selectedCards.length < this.maxCards)) {
+                options.push({ kind: selected ? 'deselect' : this.maxCards === 1 ? 'select_target' : 'select',
+                    targetId: card.uuid, command: 'menuButton', args: [card.uuid, this.uuid] });
+            }
+        }
+        const canConfirm = !!this.doneButton && !this.doneButton.disabled;
+        if (canConfirm) {
+            options.push({ kind: 'confirm', command: 'menuButton', args: ['done', this.uuid] });
+        }
+        const eligibleCount = this.displayCards.filter((entry) => entry.selectionState !== DisplayCardSelectionState.Invalid).length;
+        return { family: 'display', ...this.modelDisplayContext(player), options,
+            selection: { min: this.canChooseFewer || eligibleCount === 0 ? 0 : this.maxCards, max: this.maxCards,
+                ordered: this.showSelectionOrder, selectedIds: this.selectedCards.map((card) => card.uuid),
+                canConfirm, canCancel: false, canDecline: this.canChooseFewer } };
     }
 
     public override activePromptDisplayCardInternal() {

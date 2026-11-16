@@ -1,3 +1,4 @@
+import { modelAbilityKey } from '../core/model/ModelPrompt';
 import type { AbilityContext, IAbilityPassOption } from '../core/ability/AbilityContext';
 import { CardTargetSystem, type ICardTargetSystemProperties } from '../core/gameSystem/CardTargetSystem';
 import type { GameEvent } from '../core/event/GameEvent';
@@ -82,6 +83,11 @@ export class ChooseModalEffectsSystem<TContext extends AbilityContext = AbilityC
                 waitingPromptTitle: `Waiting for opponent to choose ${effectsToChoose} for ${context.source.title}`,
                 sourceCard: getTriggerSourceCardSummary(context.source),
                 choices: choicesWithinLimit.map(([label, system]) => ({
+                    modelOption: context.game.modelStateEnabled && modelAbilityKey(context.ability, player) && typeof properties.choices !== 'function'
+                        ? { kind: 'choose_mode', command: 'menuButton', args: [], sourceId: context.source.uuid,
+                            abilityKey: modelAbilityKey(context.ability, player),
+                            optionKey: `${modelAbilityKey(context.ability, player)}.modal.${choiceIds.get(label)}`,
+                            quantity: amountOfRemainingChoices } : undefined,
                     title: label,
                     hasLegalEffects: () => this.modalChoiceHasAnyLegalEffect(system, context),
                     handler: () => {

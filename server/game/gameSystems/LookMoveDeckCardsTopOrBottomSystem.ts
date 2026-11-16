@@ -50,8 +50,8 @@ export class LookMoveDeckCardsTopOrBottomSystem<TContext extends AbilityContext 
                 source: context.source,
                 displayCards: cards,
                 perCardButtons: [
-                    { text: 'Put on top', arg: 'top' },
-                    { text: 'Put on bottom', arg: 'bottom' }
+                    { text: 'Put on top', arg: 'top', modelOptionKey: 'deck.put_top' },
+                    { text: 'Put on bottom', arg: 'bottom', modelOptionKey: 'deck.put_bottom' }
                 ],
                 onCardButton: (card: Card, arg: string) => {
                     this.pushMoveEvent(arg, card, events, context);

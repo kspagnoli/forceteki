@@ -1,3 +1,4 @@
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Card } from '../../card/Card';
 import type { Game } from '../../Game';
 import type { Player } from '../../Player';
@@ -36,9 +37,20 @@ export class DisplayCardsWithButtonsPrompt extends DisplayCardPrompt<IDisplayCar
         return {};
     }
 
+    public override getModelPrompt(player: Player): IModelPrompt | null {
+        if (this.perCardButtons.some((button) => !button.disabled && !button.modelOptionKey)) {
+            return null;
+        }
+        return { family: 'display', ...this.modelDisplayContext(player), options: this.displayCards.flatMap((card) =>
+            this.perCardButtons.filter((button) => !button.disabled).map((button) => ({
+                kind: 'choose_option', costUnknown: true, targetId: card.uuid, optionKey: button.modelOptionKey,
+                command: 'perCardMenuButton', args: [button.arg, card.uuid, this.uuid]
+            }))) };
+    }
+
     public override activePromptDisplayCardInternal() {
         return {
-            perCardButtons: this.perCardButtons
+            perCardButtons: this.perCardButtons.map(({ modelOptionKey: _modelOptionKey, ...button }) => button)
         };
     }
 

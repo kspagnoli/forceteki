@@ -1,3 +1,4 @@
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Player } from '../../Player';
 import type { Game } from '../../Game';
 import { OngoingEffectSource } from '../../ongoingEffect/OngoingEffectSource';
@@ -6,6 +7,7 @@ import type { IPlayerPromptStateProperties } from '../../PlayerPromptState';
 import { UiPrompt } from './UiPrompt';
 
 export interface IBatchTriggerResolutionPromptProperties {
+    modelSource?: IModelPrompt['source'];
     sourceCard?: ITriggerWindowSourceCard;
     title: string;
     remainingCount: number;
@@ -32,6 +34,13 @@ export class BatchTriggerResolutionPrompt extends UiPrompt {
 
         this.player = player;
         this.properties = properties;
+    }
+
+    public override getModelPrompt(_player: Player): IModelPrompt {
+        return { family: 'trigger_order', source: this.properties.modelSource, options: [
+            { kind: 'choose_option', optionKey: 'trigger.resolve_next', quantity: 1, command: 'menuButton', args: ['next', this.uuid] },
+            { kind: 'choose_option', optionKey: 'trigger.resolve_all', quantity: this.properties.remainingCount, command: 'menuButton', args: ['all', this.uuid] }
+        ] };
     }
 
     public override activeCondition(player: Player): boolean {

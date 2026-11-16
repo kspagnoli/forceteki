@@ -185,7 +185,7 @@ export class SelectCardPrompt extends UiPrompt {
             if (button.disabled) {
                 continue;
             }
-            const kind = button.arg === 'done' ? 'confirm' : button.arg === 'cancel' ? 'cancel' : button.arg === 'noTarget' ? 'decline' : null;
+            const kind = button.arg === 'done' ? 'confirm' : button.arg === 'cancel' ? 'cancel' : ['noTarget', 'passAbility'].includes(button.arg) ? 'decline' : null;
             if (!kind) {
                 return null;
             }

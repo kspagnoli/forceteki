@@ -1,3 +1,4 @@
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import * as Util from '../../../../Util';
 import type { Card } from '../../card/Card';
 import type { Game } from '../../Game';
@@ -44,6 +45,12 @@ export class DisplayCardsBasicPrompt extends DisplayCardPrompt<IDisplayCardsBasi
 
     protected override defaultProperties() {
         return {};
+    }
+
+    public override getModelPrompt(player: Player): IModelPrompt {
+        return { family: 'acknowledgment', ...this.modelDisplayContext(player), options: [
+            { kind: 'acknowledge', command: 'menuButton', args: ['done', this.uuid] }
+        ] };
     }
 
     public override activePromptDisplayCardInternal() {

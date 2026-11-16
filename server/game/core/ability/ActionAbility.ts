@@ -1,3 +1,4 @@
+import { modelAbilityKey, modelSource } from '../model/ModelPrompt';
 import type { AbilityContext } from './AbilityContext.js';
 import { CardAbility } from './CardAbility';
 import { PhaseName, SubStepCheck } from '../Constants.js';
@@ -91,6 +92,12 @@ export abstract class ActionAbilityBase extends CardAbility {
 
             this.game.promptWithHandlerMenu(context.player, {
                 activePromptTitle: `The ability "${this.getTitle(context)}" will have no effect. Are you sure you want to use it?`,
+                modelPrompt: this.game.modelStateEnabled ? { family: 'no_effect_confirmation',
+                    rootActorId: context.player.id, source: modelSource(context.source, context.player),
+                    abilityKey: modelAbilityKey(context.ability, context.player), options: [
+                        { kind: 'accept', command: 'menuButton', args: [0], optionKey: 'confirmation.proceed', costUnknown: true, hasLegalEffects: false },
+                        { kind: 'cancel', command: 'menuButton', args: [1] }
+                    ] } : undefined,
                 choices: ['Use it anyway', 'Cancel'],
                 handlers: [
                     () => undefined,

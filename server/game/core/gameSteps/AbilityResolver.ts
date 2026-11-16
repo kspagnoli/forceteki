@@ -1,3 +1,4 @@
+import { modelAbilityKey, modelSource } from '../model/ModelPrompt';
 import { BaseStepWithPipeline } from './BaseStepWithPipeline.js';
 import { SimpleStep } from './SimpleStep.js';
 import { Stage, EventName, RelativePlayer, GameErrorSeverity } from '../Constants.js';
@@ -485,6 +486,12 @@ export class AbilityResolver extends BaseStepWithPipeline {
             this.passAbilityHandler.hasBeenShown = true;
 
             this.game.promptWithOptionalTrigger(this.passAbilityHandler.playerChoosing, {
+                modelPrompt: this.game.modelStateEnabled ? { family: 'optional_trigger', rootActorId: this.context.player.id,
+                    source: modelSource(this.context.source, this.passAbilityHandler.playerChoosing),
+                    abilityKey: modelAbilityKey(this.context.ability, this.passAbilityHandler.playerChoosing), options: [
+                        { kind: 'accept', command: 'menuButton', args: ['trigger'] },
+                        { kind: 'decline', command: 'menuButton', args: ['pass'] }
+                    ] } : undefined,
                 sourceCard: getTriggerSourceCardSummary(this.context.source),
                 abilityText: this.getAbilityPromptTitle(this.context),
                 passButtonText: this.passAbilityHandler.buttonText,

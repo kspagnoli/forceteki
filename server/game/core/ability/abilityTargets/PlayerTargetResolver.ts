@@ -1,3 +1,5 @@
+import { modelSource, modelAbilityKey } from '../../model/ModelPrompt';
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { ITargetResult } from './TargetResolver';
 import { TargetResolver } from './TargetResolver';
 import type { IPlayerTargetResolver } from '../../../TargetInterfaces';
@@ -81,6 +83,13 @@ export class PlayerTargetResolver extends TargetResolver<IPlayerTargetResolver<A
         }
 
         const players = [player, player.opponent];
+        const modelPrompt: IModelPrompt = { family: 'option', options: [] };
+        if (context.game.modelStateEnabled) {
+            Object.assign(modelPrompt, { rootActorId: context.player.id,
+                source: modelSource(context.source, player), abilityKey: modelAbilityKey(context.ability, player),
+                options: players.map((p, index) => ({ kind: 'choose_option', optionKey: p === player ? 'player.self' : 'player.opponent',
+                    command: 'menuButton', args: [index] })) });
+        }
         const choices: string[] = players.map((p) => effectChoices(EnumHelpers.asRelativePlayer(player, p), context));
 
         if (this.properties.mode === TargetMode.MultiplePlayers) { // Uses a HandlerMenuMultipleSelectionPrompt: handler takes an array of chosen items
@@ -99,7 +108,8 @@ export class PlayerTargetResolver extends TargetResolver<IPlayerTargetResolver<A
                 return true;
             };
 
-            Object.assign(promptProperties, { activePromptTitle, choices, multiSelect, handler });
+            Object.assign(promptProperties, { activePromptTitle, choices, multiSelect, handler,
+                modelPrompt: context.game.modelStateEnabled ? modelPrompt : undefined });
         } else { // Uses a HandlerMenuPrompt: each choice gets its own handler, called right away when that choice is clicked
             const activePromptTitle = typeof this.properties.activePromptTitle === 'function'
                 ? this.properties.activePromptTitle(context)
@@ -114,12 +124,14 @@ export class PlayerTargetResolver extends TargetResolver<IPlayerTargetResolver<A
 
             // For optional abilities, the Pass button is shown alongside the player choices
             if (passPrompt) {
+                modelPrompt.options.push({ kind: 'decline', command: 'menuButton', args: [choices.length] });
                 choices.push(passPrompt.buttonText);
                 handlers.push(passPrompt.handler);
                 passPrompt.hasBeenShown = true;
             }
 
             if (targetResults.canCancel) {
+                modelPrompt.options.push({ kind: 'cancel', command: 'menuButton', args: [choices.length] });
                 choices.push('Cancel');
                 handlers.push(() => {
                     targetResults.cancelled = true;
@@ -127,7 +139,8 @@ export class PlayerTargetResolver extends TargetResolver<IPlayerTargetResolver<A
                 });
             }
 
-            Object.assign(promptProperties, { activePromptTitle, choices, handlers });
+            Object.assign(promptProperties, { activePromptTitle, choices, handlers,
+                modelPrompt: context.game.modelStateEnabled ? modelPrompt : undefined });
             // TODO: figure out if we need these buttons
             /* if (player !== context.player.opponent && context.stage === Stage.PreTarget) {
                 if (!targetResults.noCostsFirstButton) {

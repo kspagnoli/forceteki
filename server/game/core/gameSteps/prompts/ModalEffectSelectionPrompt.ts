@@ -1,3 +1,4 @@
+import type { IModelOption, IModelPrompt } from '../../model/ModelPrompt';
 import type { Game } from '../../Game';
 import type { Player } from '../../Player';
 import type { IPlayerPromptStateProperties } from '../../PlayerPromptState';
@@ -7,6 +8,7 @@ import { UiPrompt } from './UiPrompt';
 
 /** A single selectable option in the {@link ModalEffectSelectionPrompt}. */
 export interface IModalEffectSelectionChoice {
+    modelOption?: IModelOption;
     title: string;
 
     /** Evaluated each time the prompt is rendered so that it reflects the game state when the choice is made. */
@@ -48,6 +50,19 @@ export class ModalEffectSelectionPrompt extends UiPrompt {
 
         this.player = player;
         this.properties = properties;
+    }
+
+    public override getModelPrompt(_player: Player): IModelPrompt | null {
+        if (this.properties.choices.some((choice) => !choice.modelOption)) {
+            return null;
+        }
+        const options: IModelPrompt['options'] = this.properties.choices.map((choice, index) => ({
+            ...choice.modelOption, hasLegalEffects: choice.hasLegalEffects(), command: 'menuButton', args: [String(index), this.uuid]
+        }));
+        if (this.properties.passButtonText) {
+            options.push({ kind: 'decline', command: 'menuButton', args: ['pass', this.uuid] });
+        }
+        return { family: 'modal', options };
     }
 
     public override activeCondition(player: Player): boolean {

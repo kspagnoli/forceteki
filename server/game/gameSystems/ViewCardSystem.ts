@@ -1,3 +1,5 @@
+import { NoActionSystem } from './NoActionSystem';
+import { modelAbilityKey } from '../core/model/ModelPrompt';
 import type { AbilityContext } from '../core/ability/AbilityContext';
 import type { Card } from '../core/card/Card';
 import type { MsgArg } from '../core/chat/GameChat';
@@ -188,11 +190,14 @@ export abstract class ViewCardSystem<TContext extends AbilityContext = AbilityCo
             // This is used to filter out game actions that wouldn't be legal such as playing a card blocked by Regional Governor
             // If we ever have a prompt choice displaying more than one card, we'll need to update this
             const gameSystem = argsToEffects.get(button.arg);
-            if (cards.length === 1 && !gameSystem.canAffect(cards[0], context)) {
+            // An explicit no-action button is a legal way to decline the displayed effect.
+            if (cards.length === 1 && !(gameSystem instanceof NoActionSystem) && !gameSystem.canAffect(cards[0], context)) {
                 disabled = true;
             }
 
-            return { text: button.text, arg: button.arg, disabled: disabled };
+            const abilityKey = context.game.modelStateEnabled ? modelAbilityKey(context.ability, promptedPlayer) : undefined;
+            const modelOptionKey = abilityKey && (/^[a-z][a-z0-9-]*$/).test(button.arg) ? `${abilityKey}.view.${button.arg}` : undefined;
+            return { text: button.text, arg: button.arg, disabled: disabled, modelOptionKey };
         });
 
         const events = [];

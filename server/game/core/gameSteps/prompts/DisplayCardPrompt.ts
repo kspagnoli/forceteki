@@ -1,3 +1,5 @@
+import { modelSource } from '../../model/ModelPrompt';
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Game } from '../../Game';
 import type { OngoingEffectSourceBase } from '../../ongoingEffect/OngoingEffectSource';
 import { OngoingEffectSource } from '../../ongoingEffect/OngoingEffectSource';
@@ -13,7 +15,7 @@ export abstract class DisplayCardPrompt<TProperties extends IDisplayCardPromptPr
     private readonly choosingPlayer: Player;
     private readonly menuTitle?: string;
     private readonly promptTitle: string;
-    private readonly source: OngoingEffectSourceBase;
+    protected readonly source: OngoingEffectSourceBase;
     private readonly selectCardMode: SelectCardMode;
 
     public constructor(game: Game, choosingPlayer: Player, properties: TProperties, selectCardMode: SelectCardMode) {
@@ -43,6 +45,14 @@ export abstract class DisplayCardPrompt<TProperties extends IDisplayCardPromptPr
         this.menuTitle = properties.activePromptTitle as string | null;
 
         this.selectCardMode = selectCardMode;
+    }
+
+    protected modelDisplayContext(player: Player): Pick<IModelPrompt, 'source' | 'displayCards'> {
+        const byId = new Map(this.properties.displayCards.map((card) => [card.uuid, card]));
+        return { source: modelSource(this.source, player), displayCards: this.getDisplayCards().map((shown) => {
+            const card = byId.get(shown.cardUuid);
+            return { id: card.id, uuid: card.uuid, ownerId: card.owner.id, controllerId: card.controller.id, zone: 'display' as const };
+        }) };
     }
 
     protected abstract activePromptDisplayCardInternal(): Partial<IPlayerPromptStateProperties>;

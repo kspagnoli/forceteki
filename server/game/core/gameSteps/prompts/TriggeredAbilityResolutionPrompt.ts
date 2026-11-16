@@ -1,3 +1,4 @@
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Player } from '../../Player';
 import type { Game } from '../../Game';
 import { OngoingEffectSource } from '../../ongoingEffect/OngoingEffectSource';
@@ -30,6 +31,21 @@ export class TriggeredAbilityResolutionPrompt extends UiPrompt {
             }
             return 0;
         });
+    }
+
+    public override getModelPrompt(player: Player): IModelPrompt | null {
+        const options: IModelPrompt['options'] = [];
+        for (const [index, choice] of this.choices.entries()) {
+            const option = choice.getModelOption?.(player);
+            if (!option) {
+                return null;
+            }
+            options.push({ ...option, hasLegalEffects: choice.hasLegalEffects(), command: 'menuButton', args: [String(index), this.uuid] });
+            if (choice.optional) {
+                options.push({ ...option, kind: 'decline', command: 'menuButton', args: [`pass${index}`, this.uuid] });
+            }
+        }
+        return { family: 'trigger_order', options };
     }
 
     public override activeCondition(player: Player): boolean {

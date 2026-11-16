@@ -1,3 +1,4 @@
+import type { IModelOption } from '../model/ModelPrompt';
 import type { ISetId } from '../../Interfaces';
 import type { AbilityContext } from '../ability/AbilityContext';
 import type { Card } from '../card/Card';
@@ -31,6 +32,7 @@ export enum PromptType {
 }
 
 export interface IButton {
+    modelOptionKey?: string;
     text: string;
     arg: string;
     command?: string;
@@ -95,6 +97,7 @@ export interface IModalEffectSelectionButton extends IButtonWithSourceCard {
  * crash for sources that have already left play.
  */
 export interface IResolutionChoice {
+    getModelOption?: (player: Player) => IModelOption | undefined;
     getTitle: () => string;
     getSourceCard: () => ITriggerWindowSourceCard | undefined;
     hasLegalEffects: () => boolean;

@@ -1,3 +1,4 @@
+import type { IModelOption, IModelPrompt } from '../../model/ModelPrompt';
 import type { Game } from '../../Game';
 import type { Player } from '../../Player';
 import type { IPlayerPromptStateProperties } from '../../PlayerPromptState';
@@ -7,6 +8,7 @@ import { UiPrompt } from './UiPrompt';
 
 /** A single selectable action in the {@link ActionSelectionPrompt}. */
 export interface IActionSelectionChoice {
+    modelOption?: IModelOption;
     title: string;
 
     /** Card rendered as the action's button: the card granting the action if it was gained, otherwise the clicked card. */
@@ -27,6 +29,7 @@ export interface IActionSelectionPromptProperties {
 
     /** Name of the clicked card. */
     sourceCardName: string;
+    modelSource?: IModelPrompt['source'];
 
     choices: IActionSelectionChoice[];
 }
@@ -49,6 +52,16 @@ export class ActionSelectionPrompt extends UiPrompt {
 
         // sort so that choices that can actually do something are presented first
         this.choices = [...properties.choices].sort((a, b) => Number(b.hasLegalEffects) - Number(a.hasLegalEffects));
+    }
+
+    public override getModelPrompt(_player: Player): IModelPrompt | null {
+        if (this.choices.some((choice) => !choice.modelOption?.abilityKey)) {
+            return null;
+        }
+        const options: IModelPrompt['options'] = this.choices.map((choice, index) => ({ ...choice.modelOption,
+            hasLegalEffects: choice.hasLegalEffects, command: 'menuButton', args: [String(index), this.uuid] }));
+        options.push({ kind: 'cancel', command: 'menuButton', args: ['cancel', this.uuid] });
+        return { family: 'ability', rootActorId: this.player.id, source: this.properties.modelSource, options };
     }
 
     public override activeCondition(player: Player): boolean {
