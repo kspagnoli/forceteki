@@ -39,4 +39,8 @@ export class SingleCardSelector<TContext extends AbilityContext = AbilityContext
     public override formatSelectParam(cards: Card[]) {
         return cards[0] ? cards[0] : cards;
     }
+
+    public override getModelSelectionBounds(context: TContext, selectedCards: Card[]) {
+        return { min: this.optional ? 0 : 1, max: 1 };
+    }
 }

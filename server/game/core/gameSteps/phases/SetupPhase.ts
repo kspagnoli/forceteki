@@ -73,6 +73,10 @@ export class SetupPhase extends Phase {
             promptType: PromptType.Initiative,
             activePromptTitle,
             source: 'choose initiative player',
+            modelPrompt: { family: 'initiative', options: [
+                { kind: 'choose_option', optionKey: 'initiative.self', command: 'menuButton', args: [0] },
+                { kind: 'choose_option', optionKey: 'initiative.opponent', command: 'menuButton', args: [1] }
+            ] },
             choices: ['Yourself', 'Opponent'],
             resetActionTimerOnComplete: true,
             handlers: [

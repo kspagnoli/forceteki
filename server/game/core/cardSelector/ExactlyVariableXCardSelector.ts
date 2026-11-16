@@ -59,4 +59,9 @@ export class ExactlyVariableXCardSelector<TContext extends AbilityContext = Abil
     public override automaticFireOnSelect(context: TContext, selectedCards: Card[] = []) {
         return this.numCardsFunc(context, selectedCards) === 1;
     }
+
+    public override getModelSelectionBounds(context: TContext, selectedCards: Card[]) {
+        const count = this.numCardsFunc(context, selectedCards);
+        return { min: this.optional ? 0 : count, max: count };
+    }
 }

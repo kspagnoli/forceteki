@@ -39,6 +39,16 @@ class HandlerMenuPrompt extends UiPrompt {
     }
 
     /** @override */
+    getModelPrompt(_player) {
+        const descriptor = this.properties.modelPrompt;
+        if (!descriptor) {
+            return null;
+        }
+        return { ...descriptor, options: descriptor.options.map((option) => ({ ...option,
+            args: option.command === 'menuButton' && option.args.length === 1 ? [...option.args, this.uuid] : option.args })) };
+    }
+
+    /** @override */
     activeCondition(player) {
         return player === this.player;
     }

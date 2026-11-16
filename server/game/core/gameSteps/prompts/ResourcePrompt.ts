@@ -1,3 +1,4 @@
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Card } from '../../card/Card';
 import type { Game } from '../../Game';
 import type { Player } from '../../Player';
@@ -56,6 +57,25 @@ export class ResourcePrompt extends AllPlayerPrompt {
             }
             player.setSelectableCards(this.selectableCards[player.name]);
         });
+    }
+
+    protected modelResourceBounds(_player: Player) {
+        return { min: this.nCardsToResource, max: this.nCardsToResource };
+    }
+
+    public override getModelPrompt(player: Player): IModelPrompt {
+        const bounds = this.modelResourceBounds(player);
+        const selected = this.selectedCards[player.name];
+        const options: IModelPrompt['options'] = player.hand
+            .filter((card) => selected.includes(card) || selected.length < bounds.max)
+            .map((card) => ({ kind: selected.includes(card) ? 'deselect' : 'select', targetId: card.uuid,
+                command: 'cardClicked', args: [card.uuid] }));
+        const canConfirm = this.hasEnoughSelected(player);
+        if (canConfirm) {
+            options.push({ kind: 'confirm', command: 'menuButton', args: ['done', this.uuid] });
+        }
+        return { family: 'resource', options, selection: { ...bounds, ordered: false,
+            selectedIds: selected.map((card) => card.uuid), canConfirm, canCancel: false, canDecline: bounds.min === 0 } };
     }
 
     public override activePromptInternal(player: Player): IPlayerPromptStateProperties {

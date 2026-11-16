@@ -108,6 +108,9 @@ export abstract class ViewCardSystem<TContext extends AbilityContext = AbilityCo
 
         Contract.assertFalse(!useDisplayPrompt && properties.interactMode !== ViewCardInteractMode.ViewOnly, 'Cannot disable display prompt for non-basic view card prompts');
 
+        if (context.game.modelStateEnabled) {
+            event.modelViewingPlayerId = this.getPromptedPlayer(properties, context).id;
+        }
         event.cards = cards;
         event.displayTextByCardUuid = properties.displayTextByCardUuid;
         event.promptHandler = useDisplayPrompt ? this.buildPromptHandler(cards, properties, context) : null;

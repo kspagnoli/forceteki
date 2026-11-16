@@ -1,3 +1,5 @@
+import { modelSource } from '../../model/ModelPrompt';
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Card } from '../../card/Card';
 import type { Game } from '../../Game';
 import type { Player } from '../../Player';
@@ -48,6 +50,11 @@ export class NumberPrompt extends UiPrompt {
             promptUuid: this.uuid,
             promptType: PromptType.Number
         };
+    }
+
+    public override getModelPrompt(player: Player): IModelPrompt {
+        return { family: 'number', options: [], numberRange: { min: this.properties.min, max: this.properties.max },
+            source: modelSource(this.properties.source, player) };
     }
 
     public override activeCondition(player) {

@@ -1,3 +1,4 @@
+import type { IModelPrompt } from '../model/ModelPrompt';
 import { UiPrompt } from './prompts/UiPrompt.js';
 import { ClaimCounterType, EffectName, EventName, SnapshotType, SubStepCheck, SwuGameFormat } from '../Constants.js';
 import { Contract } from '../utils/Contract.js';
@@ -46,6 +47,18 @@ export class ActionWindow extends UiPrompt {
         }
 
         Contract.assertNotNullLike(this.activePlayer);
+    }
+
+    public override getModelPrompt(_player: Player): IModelPrompt {
+        const { cardsWithLegalActions, mustTakeCardAction } = this.getSelectableCards();
+        const options: IModelPrompt['options'] = this.getActionButtons(mustTakeCardAction)
+            .filter((button) => !button.disabled)
+            .map((button) => ({ kind: button.arg === 'pass' ? 'pass' : button.arg === 'claimInitiative' ? 'claim_initiative' : 'unsupported',
+                command: 'menuButton', args: [button.arg, this.uuid] }));
+        for (const card of cardsWithLegalActions) {
+            options.push({ kind: 'select_source', sourceId: card.uuid, command: 'cardClicked', args: [card.uuid] });
+        }
+        return { family: 'action_window', options };
     }
 
     public override activeCondition(player: Player) {

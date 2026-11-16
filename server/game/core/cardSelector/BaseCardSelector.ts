@@ -1,3 +1,4 @@
+import type { IModelSelectionBounds } from '../model/ModelPrompt';
 import type { AbilityContext } from '../ability/AbilityContext';
 import type { Card } from '../card/Card';
 import type { CardTypeFilter, RelativePlayerFilter, TargetMode, ZoneFilter } from '../Constants';
@@ -286,6 +287,11 @@ export abstract class BaseCardSelector<TContext extends AbilityContext> {
 
     public hasExceededLimit(selectedCards: Card[], context: TContext) {
         return false;
+    }
+
+    /** Unknown complex selectors must not publish invented numeric constraints. */
+    public getModelSelectionBounds(_context: TContext, _selectedCards: Card[]): IModelSelectionBounds | null {
+        return null;
     }
 
     public formatSelectParam(cards: Card[]): Card | Card[] {

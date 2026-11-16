@@ -1,4 +1,6 @@
 import { AbilityContext } from '../../ability/AbilityContext';
+import { modelSource } from '../../model/ModelPrompt';
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Card } from '../../card/Card';
 import type { BaseCardSelector } from '../../cardSelector/BaseCardSelector';
 import type { Game } from '../../Game';
@@ -158,6 +160,41 @@ export class SelectCardPrompt extends UiPrompt {
 
     public override activeCondition(player) {
         return player === this.choosingPlayer;
+    }
+
+    public override getModelPrompt(player: Player): IModelPrompt | null {
+        const bounds = this.selector.getModelSelectionBounds(this.context, this.selectedCards);
+        if (!bounds) {
+            return null;
+        }
+        const options: IModelPrompt['options'] = [];
+        const canSelectMore = !this.selector.hasReachedLimit(this.selectedCards, this.context);
+        for (const card of this.selector.findPossibleCards(this.context)) {
+            const selected = this.selectedCards.includes(card);
+            if (selected && this.cannotUnselectMustSelect && this.properties.mustSelect.includes(card)) {
+                continue;
+            }
+            if ((!selected && !canSelectMore) || !this.checkCardCondition(card)) {
+                continue;
+            }
+            options.push({ kind: selected ? 'deselect' : this.selector.automaticFireOnSelect(this.context, this.selectedCards) ? 'select_target' : 'select',
+                targetId: card.uuid, command: 'cardClicked', args: [card.uuid] });
+        }
+        const prompt = this.activePromptInternal();
+        for (const button of prompt.buttons ?? []) {
+            if (button.disabled) {
+                continue;
+            }
+            const kind = button.arg === 'done' ? 'confirm' : button.arg === 'cancel' ? 'cancel' : button.arg === 'noTarget' ? 'decline' : null;
+            if (!kind) {
+                return null;
+            }
+            options.push({ kind, command: 'menuButton', args: [button.arg, this.uuid] });
+        }
+        return { family: 'target', options, source: modelSource(this.source, player), rootActorId: this.context.player.id,
+            selection: { ...bounds, ordered: this.properties.selectOrder ?? false, selectedIds: this.selectedCards.map((card) => card.uuid),
+                canConfirm: options.some((option) => option.kind === 'confirm'), canCancel: options.some((option) => option.kind === 'cancel'),
+                canDecline: options.some((option) => option.kind === 'decline') || bounds.min === 0 } };
     }
 
     public override activePromptInternal(): IPlayerPromptStateProperties {

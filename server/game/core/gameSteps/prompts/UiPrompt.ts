@@ -1,4 +1,5 @@
 import { v1 as uuid } from 'uuid';
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Player } from '../../Player';
 import { BaseStep } from '../BaseStep';
 import { Contract } from '../../utils/Contract';
@@ -29,6 +30,11 @@ export abstract class UiPrompt extends BaseStep {
         this.resetActionTimerOnComplete = resetActionTimerOnComplete;
 
         this.clearPrompts();
+    }
+
+    /** Unsupported families stay explicit; do not infer semantics from English titles. */
+    public getModelPrompt(_player: Player): IModelPrompt | null {
+        return null;
     }
 
     public abstract menuCommand(player: Player, arg: string, uuid: string): boolean;

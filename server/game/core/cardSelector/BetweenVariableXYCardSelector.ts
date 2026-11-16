@@ -88,4 +88,8 @@ export class BetweenVariableXYCardSelector<TContext extends AbilityContext = Abi
 
         return matchedCards;
     }
+
+    public override getModelSelectionBounds(context: TContext, selectedCards: Card[]) {
+        return { min: this.optional ? 0 : this.minNumCardsFunc(context, selectedCards), max: this.maxNumCardsFunc(context, selectedCards) };
+    }
 }

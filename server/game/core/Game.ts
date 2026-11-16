@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { ModelContext } from './model/ModelContext';
 
 import type { IScheduler } from '../../utils/IScheduler';
 import { GameChat } from './chat/GameChat';
@@ -125,6 +126,7 @@ import { AnimationRecorder } from './animation/AnimationRecorder';
 import { buildAnimationDescriptors } from './animation/AnimationLibrary';
 
 export class Game extends EventEmitter {
+    private modelContext: ModelContext | null = null;
     private _debug: { pipeline: boolean };
     private _experimental: Record<string, never>;
 
@@ -1818,6 +1820,69 @@ export class Game extends EventEmitter {
     public getNextGameEventId(): number {
         this.state.lastGameEventId += 1;
         return this.state.lastGameEventId;
+    }
+
+    public get modelStateEnabled(): boolean {
+        return this.modelContext !== null;
+    }
+
+    /** Enable before initialization; ordinary games and payloads remain unchanged. */
+    public enableModelState(): void {
+        Contract.assertFalse(this.started, 'Model observation must start before game initialization');
+        Contract.assertFalse(this.isUndoEnabled, 'Model observation does not yet support undo');
+        Contract.assertIsNullLike(this.modelContext, 'Model observation is already enabled');
+        this.modelContext = new ModelContext(this);
+    }
+
+    /** Read-only actor-scoped source for a separately implemented learning adapter. */
+    public getModelState(playerId: string) {
+        Contract.assertNotNullLike(this.modelContext, 'Model observation is not enabled');
+        Contract.assertFalse(this.manualMode || this.isUndoEnabled, 'Model observation does not support manual mode or undo');
+        const viewer = this.getPlayers().find((player) => player.id === playerId);
+        Contract.assertNotNullLike(viewer, 'Model observation requires a player seat');
+        Contract.assertTrue(this.started, 'Model observation requires an initialized game');
+        // Reuse player visibility without consuming chat or animation delivery cursors.
+        const players = Object.fromEntries(this.getPlayers().map((player) => {
+            const summary = player.getStateSummary(viewer);
+            return [player.id, { id: player.id, hasInitiative: summary.hasInitiative,
+                availableResources: summary.availableResources, numCardsInDeck: summary.numCardsInDeck,
+                cardPiles: summary.cardPiles, leaders: summary.leaders, base: summary.base,
+                promptState: player === viewer ? summary.promptState : undefined }];
+        }));
+        const state = { id: this.id, players, phase: this.currentPhase,
+            initiativeClaimed: this.isInitiativeClaimed, winners: this.winnerNames,
+            ongoingEffects: this.ongoingEffectEngine.summarizeOngoingEffectsForState(viewer) };
+        const visibleIds = new Set<string>();
+        const collect = (value: unknown) => {
+            if (!value || typeof value !== 'object') {
+                return;
+            }
+            if ('id' in value && 'uuid' in value && typeof value.uuid === 'string') {
+                visibleIds.add(value.uuid);
+            }
+            for (const item of Object.values(value)) {
+                collect(item);
+            }
+        };
+        for (const playerState of Object.values(state.players) as any[]) {
+            collect(playerState.cardPiles);
+            collect(playerState.leaders);
+            collect(playerState.base);
+        }
+        const prompt = this.getCurrentOpenPrompt();
+        return {
+            state,
+            context: {
+                version: 1, round: this.roundNumber, phase: this.currentPhase, format: this.format,
+                actionPhasePlayerId: this.actionPhaseActivePlayer?.id ?? null,
+                initiativeHolderId: this.initiativePlayer?.id ?? null,
+                initiativeClaimed: this.isInitiativeClaimed,
+                previousActionWasPass: this.currentPhase === PhaseName.Action ? this.prevActionPhasePlayerPassed : null,
+                finishedActing: Object.fromEntries(this.getPlayers().map((player) => [player.id, player.passedActionPhase])),
+                history: this.modelContext.snapshot(viewer, visibleIds)
+            },
+            prompt: !this.isEnded && prompt?.activeCondition(viewer) ? prompt.getModelPrompt(viewer) : null
+        };
     }
 
     /**

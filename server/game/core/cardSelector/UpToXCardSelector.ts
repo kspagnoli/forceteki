@@ -36,4 +36,8 @@ export class UpToXCardSelector<TContext extends AbilityContext = AbilityContext>
     public override hasExceededLimit(selectedCards: Card[]) {
         return selectedCards.length > this.numCards;
     }
+
+    public override getModelSelectionBounds(context: TContext, selectedCards: Card[]) {
+        return { min: this.optional ? 0 : 1, max: this.numCards };
+    }
 }

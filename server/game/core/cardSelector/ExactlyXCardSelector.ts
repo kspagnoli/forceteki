@@ -56,4 +56,8 @@ export class ExactlyXCardSelector<TContext extends AbilityContext = AbilityConte
     public override automaticFireOnSelect() {
         return this.numCards === 1;
     }
+
+    public override getModelSelectionBounds(context: TContext, selectedCards: Card[]) {
+        return { min: this.optional ? 0 : this.numCards, max: this.numCards };
+    }
 }

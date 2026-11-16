@@ -41,4 +41,8 @@ export class UpToVariableXCardSelector<TContext extends AbilityContext = Ability
     public override hasEnoughTargets(context: TContext) {
         return this.numCardsFunc(context) > 0 && super.hasEnoughTargets(context);
     }
+
+    public override getModelSelectionBounds(context: TContext, selectedCards: Card[]) {
+        return { min: this.optional ? 0 : 1, max: this.numCardsFunc(context, selectedCards) };
+    }
 }

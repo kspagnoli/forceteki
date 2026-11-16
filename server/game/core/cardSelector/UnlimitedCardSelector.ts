@@ -1,3 +1,4 @@
+import type { Card } from '../card/Card';
 import type { AbilityContext } from '../ability/AbilityContext.js';
 import type { TargetMode } from '../Constants.js';
 import type { IBaseCardSelectorProperties } from './BaseCardSelector.js';
@@ -13,5 +14,9 @@ export interface IUnlimitedCardSelectorProperties<TContext> extends IBaseCardSel
 export class UnlimitedCardSelector<TContext extends AbilityContext = AbilityContext> extends BaseCardSelector<TContext> {
     public constructor(properties: IUnlimitedCardSelectorProperties<TContext>) {
         super(properties);
+    }
+
+    public override getModelSelectionBounds(context: TContext, selectedCards: Card[]) {
+        return { min: this.optional ? 0 : 1, max: null };
     }
 }

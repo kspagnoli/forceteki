@@ -1,4 +1,6 @@
 import { AllPlayerPrompt } from './AllPlayerPrompt';
+import type { Player } from '../../Player';
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { IPlayerPromptStateProperties } from '../../PlayerPromptState';
 import type { Game } from '../../Game';
 import { Contract } from '../../utils/Contract';
@@ -26,6 +28,12 @@ export class MulliganPrompt extends AllPlayerPrompt {
             this.playersDone[player.name] = true;
         }
         return this.playersDone[player.name];
+    }
+
+    public override getModelPrompt(_player: Player): IModelPrompt {
+        return { family: 'mulligan', options: ['mulligan', 'keep'].map((arg) => ({
+            kind: 'choose_option', optionKey: `setup.${arg}`, command: 'menuButton', args: [arg, this.uuid]
+        })) };
     }
 
     public override activePromptInternal(): IPlayerPromptStateProperties {
