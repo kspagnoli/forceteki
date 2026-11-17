@@ -29,6 +29,12 @@ export class DeckZone extends ZoneAbstract<IPlayableCard> implements IAddRemoveZ
         return this._deck.concat(this._searchingCards);
     }
 
+    private _modelKnowledgeRevision = 0;
+
+    public get modelKnowledgeRevision(): number {
+        return this._modelKnowledgeRevision;
+    }
+
     public get deck(): readonly IPlayableCard[] {
         return this._deck;
     }
@@ -49,6 +55,7 @@ export class DeckZone extends ZoneAbstract<IPlayableCard> implements IAddRemoveZ
     }
 
     public initializeDeck(cards: IPlayableCard[]) {
+        this._modelKnowledgeRevision++;
         this._deck = cards;
 
         cards.forEach((card) => card.initializeZone(this));
@@ -83,6 +90,7 @@ export class DeckZone extends ZoneAbstract<IPlayableCard> implements IAddRemoveZ
         Contract.assertEqual(card.controller, this.owner, `Attempting to add card ${card.internalName} to ${this} but its controller is ${card.controller}`);
         Contract.assertFalse(this.cards.includes(card), `Attempting to add card ${card.internalName} to ${this} but it is already there`);
 
+        this._modelKnowledgeRevision++;
         switch (zone) {
             case DeckZoneDestination.DeckTop:
                 this._deck.unshift(card);
@@ -100,12 +108,14 @@ export class DeckZone extends ZoneAbstract<IPlayableCard> implements IAddRemoveZ
      * More efficient than removing cards one by one.
      */
     public clearDeck(): IPlayableCard[] {
+        this._modelKnowledgeRevision++;
         const removed = [...this._deck];
         this._deck = [];
         return removed;
     }
 
     public removeTopCard(): IPlayableCard | null {
+        this._modelKnowledgeRevision++;
         return this._deck.pop();
     }
 
@@ -124,6 +134,7 @@ export class DeckZone extends ZoneAbstract<IPlayableCard> implements IAddRemoveZ
             `Attempting to remove card ${card.internalName} from ${this} but found duplicate entries for it in both the deck and searched cards piles`
         );
 
+        this._modelKnowledgeRevision++;
         if (foundCardInDeckIdx != null) {
             this._deck.splice(foundCardInDeckIdx, 1);
             return;
@@ -133,6 +144,7 @@ export class DeckZone extends ZoneAbstract<IPlayableCard> implements IAddRemoveZ
     }
 
     public shuffle(randomGenerator: IRandomness) {
+        this._modelKnowledgeRevision++;
         this._deck = Helpers.shuffle(this._deck, randomGenerator);
     }
 
@@ -142,6 +154,7 @@ export class DeckZone extends ZoneAbstract<IPlayableCard> implements IAddRemoveZ
      * @param triggeringEvent The event that triggered the search. A cleanup handler will be added in case any cards are left in the zone when it finishes resolving.
      */
     public moveCardsToSearching(cards: Card | Card[], triggeringEvent: GameEvent) {
+        this._modelKnowledgeRevision++;
         for (const card of Helpers.asArray(cards)) {
             Contract.assertTrue(card.isPlayable());
 
@@ -156,6 +169,7 @@ export class DeckZone extends ZoneAbstract<IPlayableCard> implements IAddRemoveZ
         }
 
         triggeringEvent.addCleanupHandler(() => {
+            this._modelKnowledgeRevision++;
             const deck = this._deck;
             for (const card of this._searchingCards) {
                 Contract.assertFalse(deck.some((x) => x === card), `Attempting to move ${card.internalName} back to deck from search area but it is already in the deck`);

@@ -1827,11 +1827,16 @@ export class Game extends EventEmitter {
     }
 
     /** Enable before initialization; ordinary games and payloads remain unchanged. */
-    public enableModelState(): void {
+    public enableModelState(orderedDeckMemory: boolean | string[] = false): void {
         Contract.assertFalse(this.started, 'Model observation must start before game initialization');
         Contract.assertFalse(this.isUndoEnabled, 'Model observation does not yet support undo');
         Contract.assertIsNullLike(this.modelContext, 'Model observation is already enabled');
-        this.modelContext = new ModelContext(this);
+        this.modelContext = new ModelContext(this, orderedDeckMemory);
+    }
+
+    /** An explicit top-card look or keep-on-top effect grants this knowledge to its recipient only. */
+    public recordModelKnownDeckTop(viewerId: string, card: Card): void {
+        this.modelContext?.recordKnownDeckTop(viewerId, card);
     }
 
     /** Called by the display lifecycle, never by state observation. */
@@ -1919,6 +1924,7 @@ export class Game extends EventEmitter {
             state,
             context: {
                 version: 1, round: this.roundNumber, phase: this.currentPhase, format: this.format,
+                ...(this.modelContext.usesOrderedDeckMemory(viewer.id) ? { observationProfile: 'ordered-deck-v1' } : {}),
                 actionPhasePlayerId: this.actionPhaseActivePlayer?.id ?? null,
                 initiativeHolderId: this.initiativePlayer?.id ?? null,
                 initiativeClaimed: this.isInitiativeClaimed,

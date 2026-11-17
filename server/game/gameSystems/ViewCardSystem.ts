@@ -32,6 +32,9 @@ interface IViewCardPropertiesBase extends ICardTargetSystemProperties {
 
     activePromptTitle?: string;
 
+    /** Observation-only annotation; generic deck views do not establish a top position. */
+    modelKnownDeckTop?: boolean;
+
     /** The player who is viewing or revealing the card. */
     player?: Player;
 
@@ -69,6 +72,9 @@ export type IViewCardProperties = IViewCardOnlyProperties | IViewAndSelectCardsP
 
 export abstract class ViewCardSystem<TContext extends AbilityContext = AbilityContext, TProperties extends IViewCardProperties = IViewCardProperties> extends CardTargetSystem<TContext, TProperties> {
     public override eventHandler(event): void {
+        if (event.modelKnownDeckTop && event.modelViewingPlayerId && event.cards.length === 1) {
+            event.context.game.recordModelKnownDeckTop(event.modelViewingPlayerId, event.cards[0]);
+        }
         if (event.promptHandler) {
             event.promptHandler();
         }
@@ -113,6 +119,7 @@ export abstract class ViewCardSystem<TContext extends AbilityContext = AbilityCo
         if (context.game.modelStateEnabled) {
             event.modelViewingPlayerId = this.getPromptedPlayer(properties, context).id;
         }
+        event.modelKnownDeckTop = properties.modelKnownDeckTop === true;
         event.cards = cards;
         event.displayTextByCardUuid = properties.displayTextByCardUuid;
         event.promptHandler = useDisplayPrompt ? this.buildPromptHandler(cards, properties, context) : null;

@@ -35,6 +35,9 @@ export interface IMoveCardProperties extends ICardTargetSystemProperties {
     destination: Exclude<MoveZoneDestination, ZoneName.Discard | ZoneName.SpaceArena | ZoneName.GroundArena | ZoneName.Resource>;
     shuffle?: boolean;
     shuffleMovedCards?: boolean;
+
+    /** Observation-only grant from an explicit top-card placement choice. */
+    modelKnownDeckTopPlayerId?: string;
     attachedUpgradeOverrideHandler?: AttachedUpgradeOverrideHandler;
 }
 
@@ -61,6 +64,9 @@ export class MoveCardSystem<TContext extends AbilityContext = AbilityContext> ex
             this.leavesPlayEventHandler(card, event.destination, event.context, () => card.moveTo(event.destination));
         } else {
             card.moveTo(event.destination);
+            if (event.destination === DeckZoneDestination.DeckTop && event.modelKnownDeckTopPlayerId) {
+                event.context.game.recordModelKnownDeckTop(event.modelKnownDeckTopPlayerId, card);
+            }
 
             // TODO: use ShuffleDeckSystem instead
             if (event.destination === ZoneName.Deck && event.shuffle) {
@@ -175,6 +181,7 @@ export class MoveCardSystem<TContext extends AbilityContext = AbilityContext> ex
 
         event.destination = properties.destination;
         event.shuffle = properties.shuffle;
+        event.modelKnownDeckTopPlayerId = properties.modelKnownDeckTopPlayerId;
     }
 
     public override canAffectInternal(card: Card, context: TContext, additionalProperties: Partial<IMoveCardProperties> = {}, mustChangeGameState = GameStateChangeRequired.None): boolean {

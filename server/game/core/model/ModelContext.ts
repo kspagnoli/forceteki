@@ -1,7 +1,7 @@
 import type { Game } from '../Game';
 import type { Card } from '../card/Card';
 import type { Player } from '../Player';
-import { EventName } from '../Constants';
+import { EventName, ZoneName } from '../Constants';
 
 interface IPlayFact {
     actorId: string;
@@ -23,11 +23,14 @@ interface IMemoryFact {
 export class ModelContext {
     private plays = new Map<string, IPlayFact[]>();
     private memories = new Map<string, Map<string, IMemoryFact>>();
+    private knownTops = new Map<string, Map<string, { cardKey: string; deckRevision: number; seenRound: number }>>();
     private lastAction: { actorId: string; kind: string } | null = null;
     private claimActor: string | null = null;
 
-    public constructor(private readonly game: Game) {
+    public constructor(private readonly game: Game, private readonly orderedDeckMemory: boolean | string[] = false) {
+        this.orderedDeckMemory = Array.isArray(orderedDeckMemory) ? [...orderedDeckMemory] : orderedDeckMemory;
         for (const player of game.getPlayers()) {
+            this.knownTops.set(player.id, new Map());
             this.plays.set(player.id, []);
             this.memories.set(player.id, new Map());
         }
@@ -99,6 +102,21 @@ export class ModelContext {
         }
     }
 
+    public usesOrderedDeckMemory(viewerId: string): boolean {
+        return this.orderedDeckMemory === true || (Array.isArray(this.orderedDeckMemory) && this.orderedDeckMemory.includes(viewerId));
+    }
+
+    /** Only an effect that explicitly exposes the top position may call this. No deck identities are inspected here. */
+    public recordKnownDeckTop(viewerId: string, card: Card): void {
+        if (!this.usesOrderedDeckMemory(viewerId) || !this.knownTops.has(viewerId) || card.zoneName !== ZoneName.Deck) {
+            return;
+        }
+        this.remember(viewerId, [card]);
+        this.knownTops.get(viewerId).set(card.owner.id, {
+            cardKey: card.id, deckRevision: card.owner.deckZone.modelKnowledgeRevision, seenRound: this.game.roundNumber
+        });
+    }
+
     /** A display prompt itself grants these identities to its recipient. */
     public recordDisplay(viewer: Player, cards: Card[]): void {
         this.remember(viewer.id, cards, 'display');
@@ -113,11 +131,18 @@ export class ModelContext {
                 instanceId: play.instanceId && visibleIds.has(play.instanceId) ? play.instanceId : null })),
             abilityUses: [],
             lastAction: this.lastAction ? { ...this.lastAction } : null,
-            rememberedCards: [...this.memories.get(viewer.id).values()].map((fact) => ({
-                cardKey: fact.cardKey, ownerId: fact.ownerId, zone: fact.zone,
-                certainty: fact.certainty, position: null, copiesLowerBound: fact.copiesLowerBound,
-                ageRounds: Math.max(0, this.game.roundNumber - fact.seenRound)
-            }))
+            rememberedCards: [...this.memories.get(viewer.id).values()].map((fact) => {
+                const top = this.knownTops.get(viewer.id).get(fact.ownerId);
+                const current = fact.zone === ZoneName.Deck && top?.cardKey === fact.cardKey &&
+                  top.deckRevision === this.game.getPlayerById(fact.ownerId).deckZone.modelKnowledgeRevision;
+                return {
+                    cardKey: fact.cardKey, ownerId: fact.ownerId, zone: fact.zone,
+                    certainty: current ? 'current' : fact.certainty,
+                    position: current ? { end: 'top', offset: 0 } : null,
+                    copiesLowerBound: current ? 1 : fact.copiesLowerBound,
+                    ageRounds: Math.max(0, this.game.roundNumber - (current ? top.seenRound : fact.seenRound))
+                };
+            })
         };
     }
 }

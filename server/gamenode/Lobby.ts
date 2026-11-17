@@ -172,6 +172,7 @@ export class Lobby {
 
     private game?: Game;
     private researchModelEnabled = false;
+    private researchOrderedDeckMemory = false;
     private researchRevision = 0;
 
     public users: LobbyUserWrapper[] = [];
@@ -1422,7 +1423,7 @@ export class Lobby {
                 game.attachLobbyUser(user.id, user.socket.user);
             });
             if (this.researchModelEnabled) {
-                game.enableModelState();
+                game.enableModelState(this.researchOrderedDeckMemory);
             }
             await game.initialiseAsync();
             this.sendLobbyState(true);
@@ -1727,6 +1728,9 @@ export class Lobby {
             if (request?.action === 'enable') {
                 Contract.assertTrue(id === this.lobbyOwnerId && !this.game, 'Enable before the owner starts the game');
                 Contract.assertTrue(this.gameFormat === SwuGameFormat.Eternal && this.users.length <= 2, 'Only two-player Eternal is supported');
+                const observationProfile = request.observationProfile ?? 'historical-v1';
+                Contract.assertTrue(['historical-v1', 'ordered-deck-v1'].includes(observationProfile), 'Unsupported model observation profile');
+                this.researchOrderedDeckMemory = observationProfile === 'ordered-deck-v1';
                 this.researchModelEnabled = true;
                 acknowledge({ ok: true });
                 return;

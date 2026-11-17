@@ -33,6 +33,7 @@ export default class C3POProtocolDroid extends NonLeaderUnitCard {
                         condition: parseInt(thenContext.select) === topCardOfDeck?.printedCost,
                         onTrue: AbilityHelper.immediateEffects.lookAtAndChooseOption({
                             target: topCardOfDeck,
+                            modelKnownDeckTop: true,
                             perCardButtons: [
                                 {
                                     text: 'Reveal and Draw',
@@ -51,6 +52,7 @@ export default class C3POProtocolDroid extends NonLeaderUnitCard {
                         }),
                         onFalse: AbilityHelper.immediateEffects.lookAt({
                             target: topCardOfDeck,
+                            modelKnownDeckTop: true,
                             useDisplayPrompt: true
                         })
                     };

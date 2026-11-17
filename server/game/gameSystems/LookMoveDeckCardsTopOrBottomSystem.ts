@@ -37,6 +37,7 @@ export class LookMoveDeckCardsTopOrBottomSystem<TContext extends AbilityContext 
         if (deckLength === 1) {
             const lookAtEvent = new LookAtSystem({
                 target: player.drawDeck[0],
+                modelKnownDeckTop: true,
                 interactMode: ViewCardInteractMode.ViewOnly,
                 useDisplayPrompt: true
             }).generateEvent(context);
@@ -45,6 +46,9 @@ export class LookMoveDeckCardsTopOrBottomSystem<TContext extends AbilityContext 
             const actualAmount = Math.min(amount, deckLength);
             const cards = player.drawDeck.slice(0, actualAmount);
 
+            if (actualAmount === 1) {
+                context.game.recordModelKnownDeckTop(context.player.id, cards[0]);
+            }
             context.game.promptDisplayCardsWithButtons(context.player, {
                 activePromptTitle: 'Select card to move to the top or bottom of the deck',
                 source: context.source,
@@ -104,7 +108,8 @@ export class LookMoveDeckCardsTopOrBottomSystem<TContext extends AbilityContext 
         // create a new card event
         const moveGameSystem = new MoveCardSystem({
             destination: bottom ? DeckZoneDestination.DeckBottom : DeckZoneDestination.DeckTop,
-            target: card
+            target: card,
+            modelKnownDeckTopPlayerId: bottom ? undefined : context.player.id
         });
         const moveCardEvent = moveGameSystem.generateEvent(context);
         const [effectMessage, effectArgs] = moveGameSystem.getEffectMessage(context);
