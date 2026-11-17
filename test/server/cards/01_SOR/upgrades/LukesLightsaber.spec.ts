@@ -1,6 +1,5 @@
 describe('Luke\'s Lightsaber', function() {
     integration(function(contextRef) {
-
         describe('when the newly played copy is defeated by uniqueness', function() {
             beforeEach(async function() {
                 await contextRef.setupTestAsync({
