@@ -1066,7 +1066,7 @@ export class Lobby {
      * Applies a deck-change for the given user in this lobby. Used by both the
      * `changeDeck` socket handler and the lobby-scoped REST endpoint
      * (`POST /api/lobby/:lobbyId/change-deck`). Throws if the lobby is in a
-     * Bo3 game ≥ 2 state where deck-changes are disallowed; callers should
+     * Bo3 game â‰¥ 2 state where deck-changes are disallowed; callers should
      * translate that to an appropriate user-facing error.
      */
     public changeDeckForUser(userId: string, deck: ISwuDbFormatDecklist): IDeckValidationFailures | undefined {
@@ -1740,7 +1740,10 @@ export class Lobby {
                 return;
             }
             Contract.assertTrue(request?.action === 'respond', 'Unknown research action');
-            Contract.assertTrue(JSON.stringify(request.at) === JSON.stringify(at), 'Stale research response');
+            if (JSON.stringify(request.at) !== JSON.stringify(at)) {
+                acknowledge({ ok: false, code: 'STALE_RESEARCH_RESPONSE', error: 'Stale research response' });
+                return;
+            }
             const args = request.args;
             Contract.assertTrue(Array.isArray(args) && ['cardClicked', 'menuButton', 'perCardMenuButton', 'statefulPromptResults'].includes(args[0]), 'Unsupported research response');
             this.researchRevision++;
