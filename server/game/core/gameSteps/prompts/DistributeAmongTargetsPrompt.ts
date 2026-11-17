@@ -1,3 +1,5 @@
+import { modelSource } from '../../model/ModelPrompt';
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Game } from '../../Game';
 import type { Player } from '../../Player';
 import type { Card } from '../../card/Card';
@@ -77,6 +79,34 @@ export class DistributeAmongTargetsPrompt extends UiPrompt {
             buttons: buttons,
             promptUuid: this.uuid,
             promptType: PromptType.DistributeAmongTargets
+        };
+    }
+
+    public override getModelPrompt(player: Player): IModelPrompt | null {
+        if (player !== this.player || this.properties.type !== StatefulPromptType.DistributeIndirectDamage) {
+            return null;
+        }
+        const targets: { id: string; maximum: number }[] = [];
+        for (const card of this.properties.legalTargets) {
+            // Apply the ordinary player visibility filter before exposing target identity or capacity.
+            const summary = card.getSummary(player);
+            if (!summary?.id) {
+                return null;
+            }
+            targets.push({ id: card.uuid, maximum: card.isUnit()
+                ? Math.min(this.properties.amount, Math.max(0, card.remainingHp)) : this.properties.amount });
+        }
+        return {
+            family: 'distribution', options: [],
+            source: modelSource(this.properties.source, player),
+            rootActorId: this.properties.modelRootActorId,
+            distribution: {
+                kind: 'indirect_damage', amount: this.properties.amount,
+                canDistributeLess: !!this.properties.canDistributeLess,
+                canChooseNoTargets: !!this.properties.canChooseNoTargets,
+                maxTargets: this.properties.maxTargets ?? null,
+                targets
+            }
         };
     }
 

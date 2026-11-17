@@ -209,6 +209,7 @@ export abstract class DistributeAmongTargetsSystem<
 
         // build prompt with handler that will push damage / heal events into execution window on prompt resolution
         const promptProperties: IDistributeAmongTargetsPromptProperties = {
+            modelRootActorId: context.player.id,
             type: this.promptType,
             tokenType: this.getPromptTokenType(context),
             legalTargets,

@@ -34,6 +34,14 @@ export interface IModelPrompt {
         canDecline: boolean;
     };
     numberRange?: { min: number; max: number };
+    distribution?: {
+        kind: 'indirect_damage';
+        amount: number;
+        canDistributeLess: boolean;
+        canChooseNoTargets: boolean;
+        maxTargets: number | null;
+        targets: { id: string; maximum: number }[];
+    };
     rootActorId?: string;
     source?: { cardKey: string; instanceId: string | null };
 }

@@ -173,6 +173,9 @@ export interface IPromptPropertiesBase {
 }
 
 export interface IDistributeAmongTargetsPromptProperties extends IPromptPropertiesBase {
+
+    /** Opt-in model context; never part of ordinary client prompt data. */
+    modelRootActorId?: string;
     type: DistributePromptType;
     amount: number;
     source: Card;
