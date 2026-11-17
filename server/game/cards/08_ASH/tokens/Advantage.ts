@@ -39,6 +39,7 @@ export class AdvantageAbility extends TriggeredAbilityBase {
     private static buildAdvantageAbilityProperties(game: Game): ITriggeredAbilityProps<Advantage> {
         return {
             title: 'Defeat Advantage token',
+            modelIdentifier: 'advantage_when_attack_or_defense_ends',
             when: {
                 onAttackEnd: (event, context) =>
                     event.attack.attacker === context.source.parentCard ||

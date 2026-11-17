@@ -83,9 +83,15 @@ export class DistributeAmongTargetsPrompt extends UiPrompt {
     }
 
     public override getModelPrompt(player: Player): IModelPrompt | null {
-        if (player !== this.player || this.properties.type !== StatefulPromptType.DistributeIndirectDamage) {
+        if (player !== this.player) {
             return null;
         }
+        const kind = {
+            [StatefulPromptType.DistributeIndirectDamage]: 'indirect_damage',
+            [StatefulPromptType.DistributeDamage]: 'damage',
+            [StatefulPromptType.DistributeHealing]: 'healing',
+            [StatefulPromptType.DistributeTokenUpgrade]: 'token_upgrade'
+        } as const;
         const targets: { id: string; maximum: number }[] = [];
         for (const card of this.properties.legalTargets) {
             // Apply the ordinary player visibility filter before exposing target identity or capacity.
@@ -93,7 +99,7 @@ export class DistributeAmongTargetsPrompt extends UiPrompt {
             if (!summary?.id) {
                 return null;
             }
-            targets.push({ id: card.uuid, maximum: card.isUnit()
+            targets.push({ id: card.uuid, maximum: this.properties.type === StatefulPromptType.DistributeIndirectDamage && card.isUnit()
                 ? Math.min(this.properties.amount, Math.max(0, card.remainingHp)) : this.properties.amount });
         }
         return {
@@ -101,7 +107,7 @@ export class DistributeAmongTargetsPrompt extends UiPrompt {
             source: modelSource(this.properties.source, player),
             rootActorId: this.properties.modelRootActorId,
             distribution: {
-                kind: 'indirect_damage', amount: this.properties.amount,
+                kind: kind[this.properties.type], tokenType: this.properties.type === StatefulPromptType.DistributeTokenUpgrade ? this.properties.tokenType : null, amount: this.properties.amount,
                 canDistributeLess: !!this.properties.canDistributeLess,
                 canChooseNoTargets: !!this.properties.canChooseNoTargets,
                 maxTargets: this.properties.maxTargets ?? null,

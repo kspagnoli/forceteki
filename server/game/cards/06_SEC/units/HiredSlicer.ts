@@ -17,6 +17,7 @@ export default class HiredSlicer extends NonLeaderUnitCard {
             // Player chooses which deck to reveal from
             targetResolver: {
                 mode: TargetMode.Select,
+                modelOptionKeys: { 'Your deck': 'deck.look_self', 'Opponent\'s deck': 'deck.look_opponent' },
                 choices: (context) => ({
                     'Your deck': AbilityHelper.immediateEffects.sequential([
                         AbilityHelper.immediateEffects.reveal({

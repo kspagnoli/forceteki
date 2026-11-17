@@ -19,6 +19,7 @@ export default class Foresight extends UpgradeCard {
             },
             targetResolver: {
                 mode: TargetMode.DropdownList,
+                modelChoiceKind: 'card_name',
                 options: this.game.playableCardTitles,
             },
             then: (thenContext) => ({

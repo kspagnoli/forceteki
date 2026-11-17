@@ -19,6 +19,7 @@ export default class TheFirstLegionVadersFist extends NonLeaderUnitCard {
             title: 'Name a trait. Enemy cards, including those not in play, lose that trait for this phase',
             targetResolver: {
                 mode: TargetMode.DropdownList,
+                modelChoiceKind: 'trait',
                 options: this.game.traitNames,
             },
             then: (thenContext) => {

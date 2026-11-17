@@ -16,6 +16,10 @@ export default class Shatterpoint extends EventCard {
             title: 'Choose one: Defeat a non-leader unit with 3 or less remaining HP or Use the Force. If you do, defeat a non-leader unit',
             immediateEffect: AbilityHelper.immediateEffects.chooseModalEffects({
                 amountOfChoices: 1,
+                modelOptionKeys: {
+                    'Defeat a non-leader unit with 3 or less remaining HP': 'shatterpoint.small_unit',
+                    'Use the Force. If you do, defeat a non-leader unit': 'shatterpoint.use_force'
+                },
                 choices: () => ({
                     ['Defeat a non-leader unit with 3 or less remaining HP']: AbilityHelper.immediateEffects
                         .selectCard({

@@ -30,6 +30,10 @@ export default class AnakinsSkywalkerIllTrySpinning extends NonLeaderUnitCard {
             targetResolver: {
                 mode: TargetMode.Select,
                 condition: (context) => AttackHelpers.attackerSurvived(context.event.attack, this.cardsDefeatedThisPhaseWatcher),
+                modelOptionKeys: (context) => ({
+                    [`Return ${context.source.title} to your hand`]: 'pilot.return_hand',
+                    [`Keep ${context.source.title} attached`]: 'pilot.keep_attached'
+                }),
                 choices: (context) => ({
                     [`Return ${context.source.title} to your hand`]: AbilityHelper.immediateEffects.returnToHand({
                         target: context.source,

@@ -1,4 +1,4 @@
-import { modelAbilityKey, modelSource } from '../model/ModelPrompt';
+import { modelAbilityOriginId, modelAbilityKey, modelSource } from '../model/ModelPrompt';
 import type { IModelPrompt } from '../model/ModelPrompt';
 import { UiPrompt } from './prompts/UiPrompt.js';
 import { ClaimCounterType, EffectName, EventName, SnapshotType, SubStepCheck, SwuGameFormat } from '../Constants.js';
@@ -99,7 +99,7 @@ export class ActionWindow extends UiPrompt {
                 const sourceCard = gainAbilitySource ?? card;
                 return {
                     modelOption: this.game.modelStateEnabled ? { kind: 'choose_ability', command: 'menuButton', args: [],
-                        sourceId: card.uuid, abilityKey: modelAbilityKey(action, player), costUnknown: true } : undefined,
+                        sourceId: card.uuid, abilityOriginId: modelAbilityOriginId(action, player), abilityKey: modelAbilityKey(action, player), costUnknown: true } : undefined,
                     title: action.getTitle(context),
                     sourceCard: getTriggerSourceCardSummary(sourceCard),
                     hasLegalEffects: action.hasAnyLegalEffects(context, SubStepCheck.All),

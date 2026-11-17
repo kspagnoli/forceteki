@@ -1,3 +1,5 @@
+import type { PlayerOrCardAbility } from '../core/ability/PlayerOrCardAbility';
+import { modelAbilityKey, modelSource } from '../core/model/ModelPrompt';
 import type { AbilityContext } from '../core/ability/AbilityContext';
 import { GameStateChangeRequired, MetaEventName } from '../core/Constants';
 import type { GameEvent } from '../core/event/GameEvent';
@@ -10,6 +12,8 @@ import { getTriggerSourceCardSummary } from '../core/gameSteps/abilityWindow/Tri
 
 export interface IOptionalSystemProperties<TContext extends AbilityContext = AbilityContext> extends IGameSystemProperties {
     title: string;
+    modelIdentifier?: string;
+    modelTargetAbility?: (context: TContext) => PlayerOrCardAbility;
     innerSystem: GameSystem<TContext>;
 }
 
@@ -43,7 +47,19 @@ export class OptionalSystem<TContext extends AbilityContext = AbilityContext> ex
         const properties = this.generatePropertiesFromContext(context, additionalProperties);
         const sourceCard = getTriggerSourceCardSummary(context.source);
 
+        const source = context.game.modelStateEnabled ? modelSource(context.source, context.player) : undefined;
+        const explicitKey = properties.modelIdentifier?.startsWith(`${context.source.internalName}_`) && source
+            ? `ability.${properties.modelIdentifier}` : undefined;
+        const abilityKey = context.game.modelStateEnabled ? modelAbilityKey(context.ability, context.player) ?? explicitKey : undefined;
+        const targetAbility = context.game.modelStateEnabled ? properties.modelTargetAbility?.(context) : undefined;
+        const targetKey = targetAbility ? modelAbilityKey(targetAbility, context.player) : undefined;
         context.game.promptWithOptionalTrigger(context.player, {
+            modelPrompt: abilityKey && (!targetAbility || targetKey) ? {
+                family: 'optional_trigger', rootActorId: context.player.id, source, abilityKey, options: [
+                    { kind: 'accept', command: 'menuButton', args: ['trigger'], targetId: targetAbility?.card.uuid, abilityKey: targetKey },
+                    { kind: 'decline', command: 'menuButton', args: ['pass'] }
+                ]
+            } : undefined,
             sourceCard,
             abilityText: properties.title,
             onTrigger: () => {

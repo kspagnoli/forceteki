@@ -1,3 +1,4 @@
+import { modelAbilityMenu } from '../core/model/ModelPrompt';
 import type { AbilityContext } from '../core/ability/AbilityContext';
 import type { Card } from '../core/card/Card';
 import { EventName, GameStateChangeRequired, Stage, WildcardCardType, ZoneName } from '../core/Constants';
@@ -53,7 +54,8 @@ export class UseWhenPlayedSystem<TContext extends AbilityContext = AbilityContex
                 }
             );
 
-            const completeProps = { ...promptProperties, choices, handlers };
+            const completeProps = { ...promptProperties, choices, handlers,
+                modelPrompt: event.context.game.modelStateEnabled ? modelAbilityMenu(whenPlayedAbilities, player, event.context.source, event.context.player.id) : undefined };
 
             event.context.game.promptWithHandlerMenu(player, completeProps);
         }

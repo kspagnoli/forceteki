@@ -26,6 +26,7 @@ export default class AdmiralYularenFleetCoordinator extends NonLeaderUnitCard {
             targetResolver: {
                 mode: TargetMode.Select,
                 activePromptTitle: `Choose ${grit}, ${restore1}, ${sentinel}, or ${shielded}`,
+                modelOptionKeys: { [grit]: 'grant_keyword.grit', [restore1]: 'grant_keyword.restore_1', [sentinel]: 'grant_keyword.sentinel', [shielded]: 'grant_keyword.shielded' },
                 choices: (context) => {
                     const playedByPlayer = context.player;
                     return {

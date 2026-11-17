@@ -1,3 +1,5 @@
+import { modelSource } from '../../model/ModelPrompt';
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Card } from '../../card/Card';
 import type { Game } from '../../Game';
 import type { Player } from '../../Player';
@@ -8,6 +10,8 @@ import { UiPrompt } from './UiPrompt';
 
 export interface IDropdownListPromptProperties extends IPromptPropertiesBase {
     options: string[];
+    modelChoiceKind?: 'card_name' | 'trait';
+    modelRootActorId?: string;
     source: Card;
     choiceHandler: (choice: string) => void;
 }
@@ -43,6 +47,17 @@ export class DropdownListPrompt extends UiPrompt {
             dropdownListOptions: this.properties.options,
             promptUuid: this.uuid
         };
+    }
+
+    public override getModelPrompt(player: Player): IModelPrompt | null {
+        if (!this.properties.modelChoiceKind || this.properties.options.length > 4096) {
+            return null;
+        }
+        const prefix = this.properties.modelChoiceKind === 'trait' ? 'name.trait.' : 'name.card.';
+        return { family: 'option', source: modelSource(this.properties.source, player), rootActorId: this.properties.modelRootActorId,
+            options: this.properties.options.map((choice) => ({ kind: 'choose_option',
+                optionKey: prefix + (this.properties.modelChoiceKind === 'trait' ? choice.toLowerCase() : choice),
+                command: 'menuButton', args: [choice, this.uuid] })) };
     }
 
     public override activeCondition(player) {

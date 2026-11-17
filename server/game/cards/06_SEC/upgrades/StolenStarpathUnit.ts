@@ -16,6 +16,7 @@ export default class StolenStarpathUnit extends UpgradeCard {
             title: 'Name a card, reveal opponent\'s hand, and create a Spy token for each card with that name',
             targetResolver: {
                 mode: TargetMode.DropdownList,
+                modelChoiceKind: 'card_name',
                 options: this.game.playableCardTitles,
                 condition: (context) => context.player.opponent.hand.length > 0   // skip ability if opponent has no cards in hand
             },

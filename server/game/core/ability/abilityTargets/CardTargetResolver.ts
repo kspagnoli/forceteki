@@ -1,3 +1,4 @@
+import { modelAbilityKey, modelSource } from '../../model/ModelPrompt';
 import type { ICardTargetResolver, ICardTargetsResolver } from '../../../TargetInterfaces';
 import type { AbilityContext } from '../AbilityContext';
 import type { PlayerOrCardAbility } from '../PlayerOrCardAbility';
@@ -288,6 +289,13 @@ export class CardTargetResolver extends TargetResolver<ICardTargetsResolver<Abil
         const activePromptTitle = `Trigger the effect '${effectName}' on target '${target.title}' or pass${this.selector.appendToDefaultTitle ? ' ' + this.selector.appendToDefaultTitle : ''}`;
 
         context.game.promptWithHandlerMenu(player, {
+            modelPrompt: context.game.modelStateEnabled && modelSource(target, player) && modelAbilityKey(context.ability, player) ? {
+                family: 'optional_trigger', rootActorId: context.player.id,
+                source: modelSource(context.source, player), abilityKey: modelAbilityKey(context.ability, player), options: [
+                    { kind: 'accept', targetId: target.uuid, command: 'menuButton', args: [0] },
+                    { kind: 'decline', command: 'menuButton', args: [1] }
+                ]
+            } : undefined,
             activePromptTitle,
             choices: [`${effectName} -> ${target.title}`, 'Pass'],
             handlers: [

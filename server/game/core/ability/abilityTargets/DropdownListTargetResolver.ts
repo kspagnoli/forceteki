@@ -38,7 +38,7 @@ export class DropdownListTargetResolver extends TargetResolver<IDropdownListTarg
         } else {
             const choiceHandler = (choice: string) => this.setTargetResult(context, choice);
             const activePromptTitleConcrete = typeof this.properties.activePromptTitle === 'function' ? this.properties.activePromptTitle(context) : this.properties.activePromptTitle;
-            const promptProperties = Object.assign(this.getDefaultProperties(context), { choiceHandler, options, activePromptTitle: activePromptTitleConcrete });
+            const promptProperties = Object.assign(this.getDefaultProperties(context), { choiceHandler, options, activePromptTitle: activePromptTitleConcrete, modelChoiceKind: this.properties.modelChoiceKind, modelRootActorId: context.player.id });
 
             context.game.promptWithDropdownListMenu(player, promptProperties);
         }

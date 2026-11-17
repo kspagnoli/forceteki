@@ -1,3 +1,5 @@
+import { modelSource } from '../../model/ModelPrompt';
+import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Game } from '../../Game';
 import type { OngoingEffectSourceBase } from '../../ongoingEffect/OngoingEffectSource';
 import { OngoingEffectSource } from '../../ongoingEffect/OngoingEffectSource';
@@ -35,6 +37,12 @@ export class PassDelayPrompt extends UiPrompt {
             ? new OngoingEffectSource(game, properties.source)
             : properties.source ?? new OngoingEffectSource(game);
         this.activePromptTitle = properties.activePromptTitle ?? 'Pausing';
+    }
+
+    public override getModelPrompt(player: Player): IModelPrompt {
+        return { family: 'acknowledgment', source: modelSource(this.source, player), options: [
+            { kind: 'acknowledge', command: 'menuButton', args: ['done', this.uuid] }
+        ] };
     }
 
     public override activeCondition(player: Player): boolean {

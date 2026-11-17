@@ -19,6 +19,10 @@ export default class SeparatistCouncilQuarrelsomeHoldouts extends NonLeaderUnitC
             },
             immediateEffect: abilityHelper.immediateEffects.chooseModalEffects(() => ({
                 amountOfChoices: 1,
+                modelOptionKeys: {
+                    'Create a Battle Droid token': 'council.create_droid',
+                    'Give 2 Experience tokens to a Battle Droid tokens': 'council.give_experience'
+                },
                 choices: () => ({
                     ['Create a Battle Droid token']: abilityHelper.immediateEffects.createBattleDroid(),
                     ['Give 2 Experience tokens to a Battle Droid tokens']: abilityHelper.immediateEffects.selectCard({

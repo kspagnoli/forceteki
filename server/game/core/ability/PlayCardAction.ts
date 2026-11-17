@@ -23,6 +23,7 @@ import { PlayPermissionHelpers } from '../ongoingEffect/effectImpl/PlayPermissio
 
 export interface IPlayCardActionPropertiesBase {
     playType: PlayType;
+    modelAlternateCostKey?: string;
     title?: string;
     triggerHandlingMode?: TriggerHandlingMode;
     costAdjusters?: CostAdjuster | CostAdjuster[];
@@ -62,6 +63,7 @@ export abstract class PlayCardAction extends PlayerAction {
     public readonly costAdjusters: CostAdjuster[];
     public readonly exploitValue?: number;
     public readonly playType: PlayType;
+    public readonly modelAlternateCostKey?: string;
     public readonly playPermission?: IPlayPermission;
 
     protected readonly playCost: PlayCardResourceCost;
@@ -123,6 +125,7 @@ export abstract class PlayCardAction extends PlayerAction {
         );
 
         this.playType = propertiesWithDefaults.playType;
+        this.modelAlternateCostKey = propertiesWithDefaults.modelAlternateCostKey;
         this.playCost = playCost;
         this.costAdjusters = Helpers.asArray(propertiesWithDefaults.costAdjusters);
         this.exploitValue = properties.exploitValue;

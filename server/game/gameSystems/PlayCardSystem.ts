@@ -1,3 +1,4 @@
+import { modelPlayAbilityKey, type IModelPrompt } from '../core/model/ModelPrompt';
 import type { Card } from '../core/card/Card';
 import { AbilityResolver } from '../core/gameSteps/AbilityResolver';
 import type { ICardTargetSystemProperties } from '../core/gameSystem/CardTargetSystem';
@@ -67,7 +68,18 @@ export class PlayCardSystem<TContext extends AbilityContext = AbilityContext> ex
         if (availablePlayCardAbilities.length === 1) {
             this.resolvePlayCardAbility(availablePlayCardAbilities[0], event);
         } else if (availablePlayCardAbilities.length > 1) {
+            // This menu itself reveals the one card being played to its choosing player.
+            const modelDescriptor: IModelPrompt = {
+                family: 'ability', rootActorId: event.context.player.id,
+                source: { cardKey: event.card.id, instanceId: event.card.uuid },
+                displayCards: [{ id: event.card.id, uuid: event.card.uuid, ownerId: event.card.owner.id, controllerId: event.card.controller.id, zone: 'display' }],
+                options: availablePlayCardAbilities.map((action, index) => ({
+                    kind: 'choose_ability', command: 'menuButton', args: [index], sourceId: event.card.uuid,
+                    abilityKey: modelPlayAbilityKey(action, event.context.player), costUnknown: true
+                }))
+            };
             event.context.game.promptWithHandlerMenu(event.context.player, {
+                modelPrompt: modelDescriptor.options.every((option) => option.abilityKey) ? modelDescriptor : undefined,
                 activePromptTitle: `Choose an option for playing ${event.card.title}`,
                 source: event.card,
                 choices: availablePlayCardAbilities.map((action) => action.getTitle(event.context)),

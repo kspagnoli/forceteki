@@ -22,6 +22,8 @@ export default class FinnOnTheRun extends NonLeaderUnitCard {
                     effect: AbilityHelper.ongoingEffects.gainAbility({
                         title: 'For this phase, if damage would be dealt to that unit, prevent 1 of that damage',
                         type: AbilityType.DamageModification,
+                        modelIdentifier: 'finn#on-the-run_reduce_damage',
+                        modelAbilityOrigin: this,
                         modificationType: DamageModificationType.Reduce,
                         amount: 1
                     })

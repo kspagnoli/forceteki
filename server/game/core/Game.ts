@@ -1850,8 +1850,9 @@ export class Game extends EventEmitter {
         const players = Object.fromEntries(this.getPlayers().map((player) => {
             const summary = player.getStateSummary(viewer);
             return [player.id, { id: player.id, hasInitiative: summary.hasInitiative,
+                hasForceToken: summary.forceToken.active, credits: summary.credits.length,
                 availableResources: summary.availableResources, numCardsInDeck: summary.numCardsInDeck,
-                cardPiles: summary.cardPiles, leaders: summary.leaders, base: summary.base,
+                cardPiles: { ...summary.cardPiles, forceTokens: summary.forceToken.active ? [player.baseZone.forceToken.getSummary(viewer)] : [] }, leaders: summary.leaders, base: summary.base,
                 promptState: player === viewer ? summary.promptState : undefined }];
         }));
         const state = { id: this.id, players, phase: this.currentPhase,
@@ -1862,7 +1863,7 @@ export class Game extends EventEmitter {
             if (!value || typeof value !== 'object') {
                 return;
             }
-            if ('id' in value && 'uuid' in value && typeof value.uuid === 'string') {
+            if ('id' in value && typeof value.id === 'string' && value.id.length > 0 && 'uuid' in value && typeof value.uuid === 'string') {
                 visibleIds.add(value.uuid);
             }
             for (const item of Object.values(value)) {
@@ -1874,8 +1875,31 @@ export class Game extends EventEmitter {
             collect(playerState.leaders);
             collect(playerState.base);
         }
+        // Enrich only identities already authorized by the player-facing serializer.
+        const cardFacts = Array.from(visibleIds).flatMap((id) => {
+            const card = this.findAnyCardInAnyList(id);
+            if (!card) {
+                return [];
+            }
+            const inPlay = [ZoneName.GroundArena, ZoneName.SpaceArena, ZoneName.Base].includes(card.zoneName);
+            let complete = inPlay;
+            const keywords = new Map<string, number | null>();
+            for (const keyword of inPlay ? card.keywords : []) {
+                const value = keyword.hasNumericValue() ? keyword.value : 1;
+                if (keyword.hasCostValue() || keyword.hasAbilityDefinition() || !Number.isSafeInteger(value) || value < 0) {
+                    complete = false;
+                }
+                const amount = Number.isSafeInteger(value) && value >= 0 ? value : null;
+                const previous = keywords.get(keyword.name);
+                keywords.set(keyword.name, keyword.hasNumericValue() && previous !== undefined
+                    ? previous === null || amount === null ? null : previous + amount : amount);
+            }
+            return [{ id, traits: Array.from(card.traits).sort(), keywordCoverageComplete: complete,
+                keywordFacts: Array.from(keywords, ([key, amount]) => ({ key, amount })).sort((a, b) => a.key.localeCompare(b.key)) }];
+        });
         const prompt = this.getCurrentOpenPrompt();
         return {
+            cardFacts,
             state,
             context: {
                 version: 1, round: this.roundNumber, phase: this.currentPhase, format: this.format,

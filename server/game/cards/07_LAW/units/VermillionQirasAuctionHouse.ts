@@ -24,6 +24,7 @@ export default class VermillionQirasAuctionHouse extends NonLeaderUnitCard {
                 activePromptTitle: 'Reveal the top card of a deck',
                 mode: TargetMode.Select,
                 showUnresolvable: true,
+                modelOptionKeys: { 'Your deck': 'deck.look_self', 'Opponent\'s deck': 'deck.look_opponent' },
                 choices: (context) => ({
                     ['Your deck']: AbilityHelper.immediateEffects.reveal({
                         useDisplayPrompt: true,

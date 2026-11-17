@@ -24,6 +24,8 @@ export default class HeroicSacrifice extends EventCard {
                             {
                                 effect: AbilityHelper.ongoingEffects.gainAbility({
                                     type: AbilityType.Triggered,
+                                    modelIdentifier: 'heroic-sacrifice_combat_defeat',
+                                    modelAbilityOrigin: this,
                                     title: 'When this unit deals combat damage: Defeat it.',
                                     when: {
                                         onDamageDealt: (event, context) => (

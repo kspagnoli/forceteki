@@ -16,6 +16,7 @@ export default class InspectorsShuttle extends NonLeaderUnitCard {
             title: 'Name a card, then an opponent reveals their hand. For each copy of the named card in their hand, give an Experience token to this unit',
             targetResolver: {
                 mode: TargetMode.DropdownList,
+                modelChoiceKind: 'card_name',
                 options: this.game.playableCardTitles,
                 // skip ability if opponent has no cards in hand
                 condition: (context) => context.player.opponent.hand.length > 0

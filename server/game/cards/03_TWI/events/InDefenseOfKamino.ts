@@ -20,6 +20,8 @@ export default class InDefenseOfKamino extends EventCard {
                     AbilityHelper.ongoingEffects.gainKeyword({ keyword: KeywordName.Restore, amount: 2 }),
                     AbilityHelper.ongoingEffects.gainAbility({
                         type: AbilityType.Triggered,
+                        modelIdentifier: 'in-defense-of-kamino_create_clone',
+                        modelAbilityOrigin: this,
                         title: 'Create a Clone Trooper token',
                         when: { whenDefeated: true },
                         immediateEffect: AbilityHelper.immediateEffects.createCloneTrooper()

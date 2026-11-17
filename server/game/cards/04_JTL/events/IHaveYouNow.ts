@@ -20,6 +20,8 @@ export default class IHaveYouNow extends EventCard {
                 attackerLastingEffects: [{ effect: AbilityHelper.ongoingEffects.gainAbility({
                     title: 'Prevent all damage that would be dealt to it during this attack',
                     type: AbilityType.DamageModification,
+                    modelIdentifier: 'i-have-you-now_prevent_damage',
+                    modelAbilityOrigin: this,
                     modificationType: DamageModificationType.PreventAll
                 }) }]
             }

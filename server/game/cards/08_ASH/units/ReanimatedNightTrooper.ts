@@ -19,6 +19,7 @@ export default class ReanimatedNightTrooper extends NonLeaderUnitCard {
                 activePromptTitle: 'Look at the top card of a deck',
                 mode: TargetMode.Select,
                 showUnresolvable: true,
+                modelOptionKeys: { 'Your deck': 'deck.look_self', 'Opponent\'s deck': 'deck.look_opponent' },
                 choices: (context) => ({
                     ['Your deck']: this.lookAtTopCardOfDeckAndChooseDiscard(AbilityHelper, context.player),
                     ['Opponent\'s deck']: this.lookAtTopCardOfDeckAndChooseDiscard(AbilityHelper, context.player.opponent)

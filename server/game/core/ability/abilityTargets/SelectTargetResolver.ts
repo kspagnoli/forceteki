@@ -143,12 +143,14 @@ export class SelectTargetResolver extends TargetResolver<ISelectTargetResolver<A
             );
 
             const abilityKey = context.game.modelStateEnabled ? modelAbilityKey(context.ability, player) : undefined;
-            const stableChoices = this.properties.mode === TargetMode.SelectUnless || typeof this.properties.choices !== 'function';
+            const keyProperties = this.properties.mode === TargetMode.Select ? this.properties.modelOptionKeys : undefined;
+            const explicitKeys = typeof keyProperties === 'function' ? keyProperties(context) : keyProperties;
+            const stableChoices = this.properties.mode === TargetMode.SelectUnless || typeof this.properties.choices !== 'function' || (explicitKeys && choices.every((choice) => explicitKeys[choice]) && new Set(choices.map((choice) => explicitKeys[choice])).size === choices.length);
             const modelPrompt: IModelPrompt | undefined = abilityKey && stableChoices ? {
                 family: 'modal', rootActorId: context.player.id, source: modelSource(context.source, player), abilityKey,
                 options: legalChoices.map((choice, index) => ({
                     kind: choices.includes(choice) ? 'choose_mode' : 'decline',
-                    optionKey: choices.includes(choice) ? `${abilityKey}.choice.${this.name}.${choices.indexOf(choice)}` : undefined,
+                    optionKey: choices.includes(choice) ? (explicitKeys?.[choice] ?? `${abilityKey}.choice.${this.name}.${choices.indexOf(choice)}`) : undefined,
                     command: 'menuButton', args: [index],
                     hasLegalEffects: choices.includes(choice) ? this.isChoiceLegal(choice, context) : undefined
                 }))

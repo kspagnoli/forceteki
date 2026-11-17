@@ -766,14 +766,14 @@ export function WithUnitProperties<TBaseClass extends InPlayCardConstructor>(Bas
 
             if (hasAmbush) {
                 const ambushProps = Object.assign(this.buildGeneralAbilityProps('keyword_ambush'), AmbushAbility.buildAmbushAbilityProperties());
-                const ambushAbility = this.createTriggeredAbility(ambushProps);
+                const ambushAbility = this.createTriggeredAbility({ ...ambushProps, modelKeyword: 'ambush' });
                 ambushAbility.registerEvents();
                 this._whenPlayedKeywordAbilities = [...this._whenPlayedKeywordAbilities, ambushAbility];
             }
 
             if (hasShielded) {
                 const shieldedProps = Object.assign(this.buildGeneralAbilityProps('keyword_shielded'), ShieldedAbility.buildShieldedAbilityProperties());
-                const shieldedAbility = this.createTriggeredAbility(shieldedProps);
+                const shieldedAbility = this.createTriggeredAbility({ ...shieldedProps, modelKeyword: 'shielded' });
                 shieldedAbility.registerEvents();
                 this._whenPlayedKeywordAbilities = [...this._whenPlayedKeywordAbilities, shieldedAbility];
             }
@@ -821,7 +821,7 @@ export function WithUnitProperties<TBaseClass extends InPlayCardConstructor>(Bas
 
             if (hasSaboteur) {
                 const saboteurProps = Object.assign(this.buildGeneralAbilityProps('keyword_saboteur'), SaboteurDefeatShieldsAbility.buildSaboteurAbilityProperties());
-                const saboteurAbility = this.createTriggeredAbility(saboteurProps);
+                const saboteurAbility = this.createTriggeredAbility({ ...saboteurProps, modelKeyword: 'saboteur' });
                 saboteurAbility.registerEvents();
                 this._attackKeywordAbilities = [...this._attackKeywordAbilities, saboteurAbility];
             }

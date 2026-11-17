@@ -17,6 +17,7 @@ export default class GalenErsoYoullNeverWin extends NonLeaderUnitCard {
             title: 'Name a card. Cards the opponent owns with that name lose all abilities while Galen Erso is in play.',
             targetResolver: {
                 mode: TargetMode.DropdownList,
+                modelChoiceKind: 'card_name',
                 options: this.game.allNonLeaderCardTitles,
             },
             then: (thenContext) => ({

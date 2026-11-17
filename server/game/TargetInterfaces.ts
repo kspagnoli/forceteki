@@ -57,6 +57,8 @@ export type ITriggeredAbilityTargetsResolver<TContext extends TriggeredAbilityCo
 
 export interface ISelectTargetResolver<TContext extends AbilityContext> extends ISelectTargetResolverBase<TContext> {
     mode: TargetMode.Select;
+    /** Stable producer-declared identities for choices whose handlers depend on context. */
+    modelOptionKeys?: Record<string, string> | ((context: TContext) => Record<string, string>);
     choices: IChoicesInterface | ((context: TContext) => IChoicesInterface);
 }
 
@@ -78,6 +80,7 @@ export interface INumberTargetResolver<TContext extends AbilityContext> extends 
 
 export interface IDropdownListTargetResolver<TContext extends AbilityContext> extends ITargetResolverBase<TContext> {
     mode: TargetMode.DropdownList;
+    modelChoiceKind?: 'card_name' | 'trait';
     options: string[] | ((context: TContext) => string[]);
     condition?: (context: AbilityContext) => boolean;
     logSelection?: boolean;

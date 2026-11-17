@@ -25,6 +25,9 @@ import { registerState, registerStateBase } from '../GameObjectUtils';
 export abstract class CardAbilityStep extends PlayerOrCardAbility {
     private handler: (context: AbilityContext) => void;
     private readonly subStepIdentifier?: string;
+    public readonly modelAbilityOrigin?: Card;
+    public readonly modelKeyword?: string;
+    public readonly modelIdentifier?: string;
 
     /** @param card The card this ability is attached to. */
     public constructor(game: Game, card: Card, properties, type = AbilityType.Action) {
@@ -40,6 +43,9 @@ export abstract class CardAbilityStep extends PlayerOrCardAbility {
 
         this.handler = properties.handler || this.executeGameActions;
         this.subStepIdentifier = properties.subStepIdentifier;
+        this.modelAbilityOrigin = properties.modelAbilityOrigin ?? properties.gainAbilitySource;
+        this.modelKeyword = properties.modelKeyword;
+        this.modelIdentifier = properties.modelIdentifier;
     }
 
     /**
@@ -294,7 +300,15 @@ export abstract class CardAbilityStep extends PlayerOrCardAbility {
     }
 
     private withSubStepIdentifier<TProps extends object>(properties: TProps, kind: 'then' | 'ifYouDo' | 'ifYouDoNot'): TProps & { subStepIdentifier: string } {
-        return { ...properties, subStepIdentifier: `${this.stepIdentifier}_${kind}` };
+        let parentIdentifier = this.modelIdentifier ?? this.stepIdentifier;
+        if (!this.modelIdentifier && this.isCardAbility() && this.printedAbility) {
+            if (this.card.isEvent() && (this as PlayerOrCardAbility) === this.card.getEventAbility()) {
+                parentIdentifier = `event.${this.card.id}`;
+            } else if (this.card.isBase() && this.isEpicAction) {
+                parentIdentifier = `${this.card.internalName}_epic`;
+            }
+        }
+        return { ...properties, subStepIdentifier: `${parentIdentifier}_${kind}`, modelAbilityOrigin: this.modelAbilityOrigin, modelKeyword: this.modelKeyword };
     }
 
     protected buildSubAbilityStepContext(subAbilityStepProps, canBeTriggeredBy: Player, parentContex: AbilityContext) {

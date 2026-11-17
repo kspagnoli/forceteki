@@ -1,3 +1,4 @@
+import { modelSource } from '../model/ModelPrompt';
 import type { AbilityContext } from '../ability/AbilityContext';
 import { DamageType, EventName } from '../Constants';
 import { RelativeDamageTiming, type Attack } from './Attack';
@@ -186,6 +187,11 @@ export class AttackFlow extends BaseStepWithPipeline {
         this.game.promptWithHandlerMenu(choosingPlayer, {
             activePromptTitle: 'Multiple abilities conflict over combat damage timing. Choose which unit deals combat damage first:',
             waitingPromptTitle: 'Waiting for opponent to choose which unit deals combat damage first',
+            modelPrompt: this.game.modelStateEnabled ? { family: 'option', source: modelSource(this.attack.attacker, choosingPlayer), rootActorId: this.context.player.id,
+                options: [
+                    { kind: 'choose_option', optionKey: 'combat.order.attacker_first', targetId: this.attack.attacker.uuid, command: 'menuButton', args: [0] },
+                    { kind: 'choose_option', optionKey: 'combat.order.defender_first', targetId: target.uuid, command: 'menuButton', args: [1] }
+                ] } : undefined,
             choices: [`${this.attack.attacker.title} (attacker)`, `${target.title} (defender)`],
             handlers: [
                 () => onChosen(RelativeDamageTiming.AttackerBeforeDefender, choosingPlayer),

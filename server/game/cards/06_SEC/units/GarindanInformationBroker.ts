@@ -16,6 +16,7 @@ export default class GarindanInformationBroker extends NonLeaderUnitCard {
             title: 'Name a card, look at opponent\'s hand, and discard a card with that name',
             targetResolver: {
                 mode: TargetMode.DropdownList,
+                modelChoiceKind: 'card_name',
                 options: this.game.playableCardTitles,
                 condition: (context) => context.player.opponent.hand.length > 0   // skip ability if opponent has no cards in hand
             },

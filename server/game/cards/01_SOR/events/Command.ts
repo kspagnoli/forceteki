@@ -17,6 +17,12 @@ export default class Command extends EventCard {
             title: 'Command modal ability:',
             immediateEffect: AbilityHelper.immediateEffects.chooseModalEffects({
                 amountOfChoices: 2,
+                modelOptionKeys: {
+                    'Give 2 Experience tokens to a unit.': 'command.experience',
+                    'A friendly unit deals damage equal to its power to a non-unique enemy unit.': 'command.unit_damage',
+                    'Put this event into play as a resource.': 'command.resource',
+                    'Return a unit from your discard pile to your hand.': 'command.return_unit'
+                },
                 choices: (context) => ({
                     ['Give 2 Experience tokens to a unit.']: AbilityHelper.immediateEffects.selectCard({
                         activePromptTitle: 'Give 2 Experience tokens to a unit',

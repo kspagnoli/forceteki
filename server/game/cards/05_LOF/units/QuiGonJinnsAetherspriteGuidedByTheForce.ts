@@ -25,6 +25,8 @@ export default class QuiGonJinnsAetherspriteGuidedByTheForce extends NonLeaderUn
                 effectDescription: 'apply an effect to use their next "When Played" ability again',
                 immediateEffect: AbilityHelper.immediateEffects.optional({
                     title: 'Use that "When Played" ability again',
+                    modelIdentifier: 'quigon-jinns-aethersprite#guided-by-the-force_repeat_when_played',
+                    modelTargetAbility: (context) => context.events.find((event) => event.name === EventName.OnCardAbilityInitiated).ability,
                     innerSystem: AbilityHelper.immediateEffects.useWhenPlayedAbility((context) => {
                         const event = context.events.find((event) => event.name === EventName.OnCardAbilityInitiated);
                         return {

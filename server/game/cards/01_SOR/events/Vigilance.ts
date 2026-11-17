@@ -17,6 +17,12 @@ export default class Vigilance extends EventCard {
             title: 'Vigilance modal ability:',
             immediateEffect: AbilityHelper.immediateEffects.chooseModalEffects({
                 amountOfChoices: 2,
+                modelOptionKeys: {
+                    'Discard 6 cards from an opponent\'s deck.': 'vigilance.mill',
+                    'Heal 5 damage from a base.': 'vigilance.heal_base',
+                    'Defeat a unit with 3 or less remaining HP.': 'vigilance.defeat_small_unit',
+                    'Give a Shield token to a unit.': 'vigilance.shield'
+                },
                 choices: (context) => ({
                     ['Discard 6 cards from an opponent\'s deck.']: AbilityHelper.immediateEffects.discardFromDeck({
                         target: context.player.opponent,

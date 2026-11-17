@@ -1,3 +1,5 @@
+import type { PlayCardAction } from '../ability/PlayCardAction';
+import type { TokenUpgradeName } from '../Constants';
 import type { Player } from '../Player';
 import type { PlayerOrCardAbility } from '../ability/PlayerOrCardAbility';
 import type { Card } from '../card/Card';
@@ -8,6 +10,7 @@ export interface IModelOption {
     command: string;
     args: unknown[];
     sourceId?: string;
+    abilityOriginId?: string;
     targetId?: string;
     abilityKey?: string;
     optionKey?: string;
@@ -35,7 +38,8 @@ export interface IModelPrompt {
     };
     numberRange?: { min: number; max: number };
     distribution?: {
-        kind: 'indirect_damage';
+        kind: 'indirect_damage' | 'damage' | 'healing' | 'token_upgrade';
+        tokenType: TokenUpgradeName | null;
         amount: number;
         canDistributeLess: boolean;
         canChooseNoTargets: boolean;
@@ -69,16 +73,36 @@ export function modelAbilityKey(ability: PlayerOrCardAbility, player: Player): s
         return 'action.attack';
     }
     if (ability.isPlayCardAbility()) {
-        return `action.play.${ability.playType}`;
+        return modelPlayAbilityKey(ability, player);
     }
-    if (ability.isCardAbility() && !ability.printedAbility) {
-        return undefined;
+    // This metadata is set only by the keyword registrar, including when a keyword is gained.
+    if (ability.isCardAbilityStep() && ['ambush', 'shielded', 'saboteur'].includes(ability.modelKeyword)) {
+        return `keyword.${ability.modelKeyword}`;
+    }
+    if (ability.isCardAbilityStep()) {
+        const origin = ability.modelAbilityOrigin;
+        if (origin) {
+            const identifier = ability.modelIdentifier ?? ability.stepIdentifier;
+            if (!modelSource(origin, player) ||
+              (!identifier.startsWith(`${origin.internalName}_`) && !identifier.startsWith(`gained_from_${origin.internalName}_`))) {
+                return undefined;
+            }
+        } else if ((ability.isCardAbility() && !ability.printedAbility) || ability.stepIdentifier.startsWith('gained_from_')) {
+            return undefined;
+        }
+    }
+    if (ability.isCardAbility() && ability.printedAbility && ability.card.isBase() && ability.isEpicAction) {
+        return `ability.epic.${ability.card.id}`;
+    }
+    if (ability.isCardAbilityStep() && ability.modelIdentifier) {
+        const namespace = ability.modelAbilityOrigin?.internalName ?? ability.card.internalName;
+        return ability.modelIdentifier.startsWith(`${namespace}_`) ? `ability.${ability.modelIdentifier}` : undefined;
     }
     // An implemented event has one printed root ability, even when upstream leaves its identifier anonymous.
     if (ability.isCardAbility() && ability.card.isEvent() && ability === ability.card.getEventAbility()) {
         return `ability.event.${ability.card.id}`;
     }
-    if (ability.isCardAbilityStep() && !ability.stepIdentifier.endsWith('_anonymous')) {
+    if (ability.isCardAbilityStep() && !ability.stepIdentifier.includes('_anonymous')) {
         return `ability.${ability.stepIdentifier}`;
     }
     return undefined;
@@ -91,4 +115,39 @@ export function bindModelMenu(descriptor: IModelPrompt | undefined, uuid: string
     }
     return { ...descriptor, options: descriptor.options.map((option) => ({ ...option,
         args: option.command === 'menuButton' && option.args.length === 1 ? [...option.args, uuid] : option.args })) };
+}
+
+/** Play permissions from different visible sources are distinct choices, even for the same card. */
+export function modelPlayAbilityKey(ability: PlayCardAction, player: Player): string | undefined {
+    let key = `action.play.${ability.playType}`;
+    if (ability.modelAlternateCostKey !== undefined) {
+        if (!(/^[a-zA-Z0-9_-]+$/).test(ability.modelAlternateCostKey)) {
+            return undefined;
+        }
+        key += `.alternate.${ability.card.id}.${ability.modelAlternateCostKey}`;
+    }
+    if (!ability.playPermission) {
+        return key;
+    }
+    const source = modelSource(ability.playPermission.source, player);
+    return source ? `${key}.via.${source.cardKey}` : undefined;
+}
+
+/** Reuse choices identify both the selected ability and its visible holder. */
+export function modelAbilityMenu(abilities: PlayerOrCardAbility[], player: Player, sourceCard: Card, rootActorId: string): IModelPrompt | undefined {
+    const source = modelSource(sourceCard, player);
+    const options = abilities.map((ability, index): IModelOption => ({
+        kind: 'choose_ability', sourceId: ability.card.uuid, abilityOriginId: modelAbilityOriginId(ability, player), abilityKey: modelAbilityKey(ability, player),
+        command: 'menuButton', args: [index], costUnknown: true
+    }));
+    if (!source || abilities.some((ability) => !modelSource(ability.card, player)) || options.some((option) => !option.abilityKey)) {
+        return undefined;
+    }
+    return { family: 'ability', source, rootActorId, options };
+}
+
+/** Physical origin is useful when two copies grant otherwise identical actions. */
+export function modelAbilityOriginId(ability: PlayerOrCardAbility, player: Player): string | undefined {
+    const origin = ability.isCardAbilityStep() ? ability.modelAbilityOrigin : ability.isPlayCardAbility() ? ability.playPermission?.source : undefined;
+    return modelSource(origin, player)?.instanceId ?? undefined;
 }

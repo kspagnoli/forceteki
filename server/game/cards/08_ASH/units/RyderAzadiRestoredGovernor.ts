@@ -16,6 +16,7 @@ export default class RyderAzadiRestoredGovernor extends NonLeaderUnitCard {
             title: 'Name a card',
             targetResolver: {
                 mode: TargetMode.DropdownList,
+                modelChoiceKind: 'card_name',
                 options: this.game.playableCardTitles,
             },
             then: (thenContext) => ({

@@ -1,4 +1,4 @@
-import { modelAbilityKey, modelSource } from '../../model/ModelPrompt';
+import { modelAbilityOriginId, modelAbilityKey, modelSource } from '../../model/ModelPrompt';
 import type { Player } from '../../Player';
 import type { GameEvent } from '../../event/GameEvent';
 import type { EventWindow } from '../../event/EventWindow';
@@ -312,7 +312,7 @@ export abstract class TriggerWindowBase extends BaseStep {
             getModelOption: this.game.modelStateEnabled ? (player) => {
                 const source = modelSource(context.source, player);
                 const abilityKey = modelAbilityKey(context.ability, player);
-                return source && abilityKey ? { kind: 'choose_ability', sourceId: source.instanceId, abilityKey,
+                return source && abilityKey ? { kind: 'choose_ability', sourceId: source.instanceId, abilityOriginId: modelAbilityOriginId(context.ability, player), abilityKey,
                     command: 'menuButton', args: [], quantity: 1 } : undefined;
             } : undefined,
             getTitle: () => context.ability.getTitle(context),
@@ -334,7 +334,8 @@ export abstract class TriggerWindowBase extends BaseStep {
             getModelOption: this.game.modelStateEnabled ? (player) => {
                 const source = modelSource(first.source, player);
                 const abilityKey = modelAbilityKey(first.ability, player);
-                return source && abilityKey ? { kind: 'choose_ability', sourceId: source.instanceId, abilityKey,
+                return source && abilityKey ? { kind: 'choose_ability', sourceId: source.instanceId,
+                    abilityOriginId: new Set(members.map((member) => modelAbilityOriginId(member.ability, player))).size === 1 ? modelAbilityOriginId(first.ability, player) : undefined, abilityKey,
                     command: 'menuButton', args: [], quantity: members.length } : undefined;
             } : undefined,
             getTitle: () => this.getGroupingTitle(first),

@@ -12,6 +12,7 @@ import type { PerChoiceLimit } from '../core/ability/AbilityLimit';
 
 export interface IPlayModalCardProperties<TContext extends AbilityContext = AbilityContext> extends ICardTargetSystemProperties {
     amountOfChoices: number;
+    modelOptionKeys?: Record<string, string>;
     choices: IChoicesInterface | ((context: TContext) => IChoicesInterface);
 
     /** If true, the player may select the same option more than once. Defaults to false. */
@@ -83,10 +84,10 @@ export class ChooseModalEffectsSystem<TContext extends AbilityContext = AbilityC
                 waitingPromptTitle: `Waiting for opponent to choose ${effectsToChoose} for ${context.source.title}`,
                 sourceCard: getTriggerSourceCardSummary(context.source),
                 choices: choicesWithinLimit.map(([label, system]) => ({
-                    modelOption: context.game.modelStateEnabled && modelAbilityKey(context.ability, player) && typeof properties.choices !== 'function'
+                    modelOption: context.game.modelStateEnabled && modelAbilityKey(context.ability, player) && (typeof properties.choices !== 'function' || (properties.modelOptionKeys && choicesWithinLimit.every(([label]) => properties.modelOptionKeys[label]) && new Set(choicesWithinLimit.map(([label]) => properties.modelOptionKeys[label])).size === choicesWithinLimit.length))
                         ? { kind: 'choose_mode', command: 'menuButton', args: [], sourceId: context.source.uuid,
                             abilityKey: modelAbilityKey(context.ability, player),
-                            optionKey: `${modelAbilityKey(context.ability, player)}.modal.${choiceIds.get(label)}`,
+                            optionKey: properties.modelOptionKeys?.[label] ?? `${modelAbilityKey(context.ability, player)}.modal.${choiceIds.get(label)}`,
                             quantity: amountOfRemainingChoices } : undefined,
                     title: label,
                     hasLegalEffects: () => this.modalChoiceHasAnyLegalEffect(system, context),

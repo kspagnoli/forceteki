@@ -23,6 +23,7 @@ export default class QiraPlayingHerPart extends NonLeaderUnitCard {
                 title: 'Name a card',
                 targetResolver: {
                     mode: TargetMode.DropdownList,
+                    modelChoiceKind: 'card_name',
                     options: this.game.playableCardTitles,
                 },
                 then: (thenContext) => ({

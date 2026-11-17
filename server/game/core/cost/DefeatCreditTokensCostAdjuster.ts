@@ -1,3 +1,4 @@
+import { modelSource, type IModelOption } from '../model/ModelPrompt';
 import { DefeatCardSystem } from '../../gameSystems/DefeatCardSystem';
 import { DefeatSourceType } from '../../IDamageOrDefeatSource';
 import type { AbilityContext } from '../ability/AbilityContext';
@@ -94,15 +95,18 @@ export class DefeatCreditTokensCostAdjuster extends CostAdjusterWithGameSteps {
         const canPlayWithoutAdjuster = minimumCreditsRequiredToPay === 0;
 
         const choices: string[] = [];
+        const modelOptions: IModelOption[] = [];
         const handlers: (() => void)[] = [];
 
         // If there's only one amount of credits that can be used, don't offer multiple choices
         if (maximumCreditsThatCanBeUsed === minimumCreditsRequiredToPay || maximumCreditsThatCanBeUsed === 1) {
+            modelOptions.push({ kind: 'choose_option', command: 'menuButton', args: [choices.length], optionKey: 'cost.credits.use', quantity: maximumCreditsThatCanBeUsed, costUnknown: true });
             choices.push(`Use ${this.creditString(maximumCreditsThatCanBeUsed)}`);
             handlers.push(() => {
                 this.triggerCostAdjustmentEvents(events, maximumCreditsThatCanBeUsed, context, costAdjustTriggerResult, abilityCostResult);
             });
         } else {
+            modelOptions.push({ kind: 'choose_option', command: 'menuButton', args: [choices.length], optionKey: 'cost.credits.select_amount', costUnknown: true });
             choices.push('Select amount');
             handlers.push(() => {
                 this.promptWithNumberMenu(
@@ -118,12 +122,14 @@ export class DefeatCreditTokensCostAdjuster extends CostAdjusterWithGameSteps {
 
         // Offer the choice to skip using credit tokens if possible
         if (canPlayWithoutAdjuster) {
+            modelOptions.push({ kind: 'choose_option', command: 'menuButton', args: [choices.length], optionKey: 'cost.credits.skip', costUnknown: true });
             choices.push('Pay costs without Credit tokens');
             handlers.push(() => undefined);
         }
 
         // Offer the choice to not play the card / use the ability
         if (abilityCostResult.canCancel) {
+            modelOptions.push({ kind: 'cancel', command: 'menuButton', args: [choices.length] });
             choices.push('Cancel');
             handlers.push(() => {
                 abilityCostResult.cancelled = true;
@@ -141,7 +147,8 @@ export class DefeatCreditTokensCostAdjuster extends CostAdjusterWithGameSteps {
         context.game.promptWithHandlerMenu(this.sourcePlayer, {
             activePromptTitle: promptTitle,
             choices,
-            handlers
+            handlers,
+            modelPrompt: { family: 'option', options: modelOptions, source: modelSource(context.source, this.sourcePlayer), rootActorId: context.player.id }
         });
     }
 

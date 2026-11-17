@@ -18,6 +18,12 @@ export default class Aggression extends EventCard {
             title: 'Aggression modal ability:',
             immediateEffect: AbilityHelper.immediateEffects.chooseModalEffects({
                 amountOfChoices: 2,
+                modelOptionKeys: {
+                    'Draw a card': 'aggression.draw',
+                    'Defeat up to 2 upgrades': 'aggression.defeat_upgrades',
+                    'Ready a unit with 3 or less power': 'aggression.ready_small_unit',
+                    'Deal 4 damage to a unit': 'aggression.damage'
+                },
                 choices: () => ({
                     ['Draw a card']: AbilityHelper.immediateEffects.draw(),
                     ['Defeat up to 2 upgrades']: AbilityHelper.immediateEffects.selectCard({

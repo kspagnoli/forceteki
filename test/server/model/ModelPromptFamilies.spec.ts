@@ -21,7 +21,9 @@ describe('Typed model prompt families', function() {
             expect(choices.length).toBe(2);
             expect(choices.every((choice) => choice.sourceId === context.player1.leader.uuid && !!choice.abilityKey)).toBeTrue();
             expect(choices.some((choice) => choice.hasLegalEffects === false)).toBeTrue();
-            context.player1.clickPrompt('Give a shield to a heroism unit you played this phase');
+            const noEffect = choices.find((choice) => choice.hasLegalEffects === false);
+            const button = context.player1.player.currentPrompt().buttons.find((choice) => choice.arg === noEffect.args[0]);
+            context.player1.clickPrompt(button.text);
             const confirmation = context.game.getModelState(context.player1.player.id).prompt;
             expect(confirmation.family).toBe('no_effect_confirmation');
             expect(confirmation.source.cardKey).toBe(context.player1.leader.id);

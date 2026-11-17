@@ -16,6 +16,7 @@ export default class TransmissionJamming extends EventCard {
             title: 'Name a card',
             targetResolver: {
                 mode: TargetMode.DropdownList,
+                modelChoiceKind: 'card_name',
                 options: this.game.playableCardTitles,
             },
             then: (thenContext) => ({

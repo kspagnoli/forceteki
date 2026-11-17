@@ -382,12 +382,13 @@ export class PlayableOrDeployableCard extends Card implements IPlayableOrDeploya
             ? { ...propertyOverrides.playPermission, adjustCost: undefined }
             : undefined;
 
-        return this.alternatePlayCosts.map((alternate) =>
+        return this.alternatePlayCosts.map((alternate, index) =>
             this.buildPlayCardAction({
                 ...propertyOverrides,
                 playType,
                 playPermission,
                 title: alternate.title,
+                modelAlternateCostKey: alternate.costName ?? `registered_${index}`,
                 additionalCosts: this.buildPlayCost(alternate),
                 costAdjusters: [CostAdjusterFactory.create(this.game, this, { costAdjustType: CostAdjustType.Free })],
             })

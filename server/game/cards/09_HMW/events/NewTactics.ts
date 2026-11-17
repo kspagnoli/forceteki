@@ -21,6 +21,7 @@ export default class NewTactics extends EventCard {
                 deck: {
                     mode: TargetMode.Select,
                     dependsOn: 'unit',
+                    modelOptionKeys: { [NamedAction.Top]: 'deck.put_top', [NamedAction.Bottom]: 'deck.put_bottom' },
                     choosingPlayer: (context) => (context.targets.unit.owner === context.player ? RelativePlayer.Self : RelativePlayer.Opponent),
                     activePromptTitle: (context) => `Move ${context.targets.unit.title} to [Top] or [Bottom] of your deck`,
                     choices: (context) => ({

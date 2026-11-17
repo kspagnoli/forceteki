@@ -1,3 +1,4 @@
+import { modelAbilityKey, modelSource } from '../model/ModelPrompt';
 import { CardTargetResolver } from './abilityTargets/CardTargetResolver.js';
 import { SelectTargetResolver } from './abilityTargets/SelectTargetResolver.js';
 import type { RelativePlayerFilter } from '../Constants.js';
@@ -174,6 +175,13 @@ export abstract class PlayerOrCardAbility extends GameObjectBase {
             }
 
             this.game.promptWithHandlerMenu(context.player, {
+                modelPrompt: this.game.modelStateEnabled && modelAbilityKey(this, context.player) ? {
+                    family: 'option', rootActorId: context.player.id, source: modelSource(context.source, context.player),
+                    abilityKey: modelAbilityKey(this, context.player), options: [
+                        { kind: 'accept', command: 'menuButton', args: [0], costUnknown: true },
+                        { kind: 'cancel', command: 'menuButton', args: [1] }
+                    ]
+                } : undefined,
                 activePromptTitle: confirmationMessage,
                 choices: ['Continue', 'Cancel'],
                 handlers: [

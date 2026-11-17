@@ -77,6 +77,13 @@ export abstract class PlayEventActionBase extends PlayCardAction {
             }
 
             this.game.promptWithHandlerMenu(context.player, {
+                modelPrompt: this.game.modelStateEnabled ? {
+                    family: 'option', rootActorId: context.player.id, source: modelSource(context.source, context.player),
+                    abilityKey: modelAbilityKey(eventAbility, context.player), options: [
+                        { kind: 'accept', command: 'menuButton', args: [0], costUnknown: true },
+                        { kind: 'cancel', command: 'menuButton', args: [1] }
+                    ]
+                } : undefined,
                 activePromptTitle: confirmationMessage,
                 choices: ['Continue', 'Cancel'],
                 handlers: [

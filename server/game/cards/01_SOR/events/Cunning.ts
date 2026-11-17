@@ -17,6 +17,12 @@ export default class Cunning extends EventCard {
             title: 'Cunning modal ability:',
             immediateEffect: AbilityHelper.immediateEffects.chooseModalEffects({
                 amountOfChoices: 2,
+                modelOptionKeys: {
+                    'Return a non-leader unit with 4 or less power to its owner\'s hand': 'cunning.return_unit',
+                    'Give a unit +4/+0 for this phase': 'cunning.pump',
+                    'Exhaust up to 2 units': 'cunning.exhaust',
+                    'An opponent discards a random card from their hand': 'cunning.discard'
+                },
                 choices: () => ({
                     ['Return a non-leader unit with 4 or less power to its owner\'s hand']: AbilityHelper.immediateEffects.selectCard({
                         activePromptTitle: 'Return a non-leader unit with 4 or less power to its owner\'s hand',

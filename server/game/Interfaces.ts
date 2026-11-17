@@ -130,6 +130,11 @@ export interface IOngoingCardEffectProps extends IOngoingEffectProps<Card> {
 /** Base interface for triggered and action ability definitions */
 export interface IAbilityProps<TContext extends AbilityContext> {
     title: string;
+    /** Opt-in identity metadata set by the built-in keyword registrar. */
+    modelKeyword?: 'ambush' | 'shielded' | 'saboteur';
+    /** Stable source-scoped identity for a producer whose engine ability identifier is ambiguous. */
+    modelIdentifier?: string;
+    modelAbilityOrigin?: Card;
     contextTitle?: (context: TContext) => string;
 
     /**
