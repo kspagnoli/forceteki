@@ -21,7 +21,8 @@ export default class VadersLightsaber extends UpgradeCard {
                 zoneFilter: ZoneName.GroundArena,
                 cardTypeFilter: WildcardCardType.Unit,
                 immediateEffect: AbilityHelper.immediateEffects.conditional({
-                    condition: (context) => context.source.parentCard?.title === 'Darth Vader',
+                    // Uniqueness can defeat this copy before its When Played ability resolves.
+                    condition: (context) => (context.source.isAttached() ? context.source.parentCard : context.event.attachTarget)?.title === 'Darth Vader',
                     onTrue: AbilityHelper.immediateEffects.damage({ amount: 4 }),
                 })
             }

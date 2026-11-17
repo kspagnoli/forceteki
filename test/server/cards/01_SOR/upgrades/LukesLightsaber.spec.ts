@@ -1,5 +1,53 @@
 describe('Luke\'s Lightsaber', function() {
     integration(function(contextRef) {
+
+        describe('when the newly played copy is defeated by uniqueness', function() {
+            beforeEach(async function() {
+                await contextRef.setupTestAsync({
+                    phase: 'action',
+                    player1: {
+                        hand: ['lukes-lightsaber'],
+                        groundArena: [
+                            { card: 'battlefield-marine', upgrades: ['lukes-lightsaber'] },
+                            { card: 'luke-skywalker#jedi-knight', damage: 3 }
+                        ]
+                    },
+                    player2: { groundArena: ['wampa'] }
+                });
+                const { context } = contextRef;
+                const copies = context.player1.findCardsByName('lukes-lightsaber');
+                context.newSaber = copies.find((card) => card.zoneName === 'hand');
+                context.oldSaber = copies.find((card) => card.zoneName === 'groundArena');
+            });
+
+            it('does not trigger the named-unit benefit for an unrelated attached unit', function() {
+                const { context } = contextRef;
+                context.player1.clickCard(context.newSaber);
+                context.player1.clickCard(context.wampa);
+                context.player1.clickCard(context.newSaber);
+
+                expect(context.newSaber).toBeInZone('discard');
+                expect(context.oldSaber).toBeInZone('groundArena');
+                expect(context.wampa.damage).toBe(0);
+                expect(context.wampa).toHaveExactUpgradeNames([]);
+                expect(context.player2).toBeActivePlayer();
+            });
+
+            it('still resolves its When Played benefit using the original attachment', function() {
+                const { context } = contextRef;
+                context.player1.clickCard(context.newSaber);
+                context.player1.clickCard(context.lukeSkywalker);
+                context.player1.clickCard(context.newSaber);
+
+                expect(context.lukeSkywalker.damage).toBe(0);
+                expect(context.lukeSkywalker).toHaveExactUpgradeNames(['shield']);
+
+                expect(context.newSaber).toBeInZone('discard');
+                expect(context.oldSaber).toBeInZone('groundArena');
+                expect(context.player2).toBeActivePlayer();
+            });
+        });
+
         describe('Luke\'s Lightsaber\'s ability', function() {
             beforeEach(function () {
                 return contextRef.setupTestAsync({
