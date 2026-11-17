@@ -1,3 +1,5 @@
+import { modelSource } from '../model/ModelPrompt';
+import type { IModelOption } from '../model/ModelPrompt';
 import type { AbilityContext } from '../ability/AbilityContext';
 import { CardTargetResolver } from '../ability/abilityTargets/CardTargetResolver';
 import type { Card } from '../card/Card';
@@ -267,12 +269,14 @@ export abstract class TargetedCostAdjuster extends CostAdjusterWithGameSteps {
             return;
         }
 
+        const modelOptions: IModelOption[] = [{ kind: 'choose_option', optionKey: `cost.${this.costPropertyName}.use`, costUnknown: true, command: 'menuButton', args: [] }];
         const choices = [this.useAdjusterButtonText];
         const handlers = [
             () => this.triggerAdjustment(events, context, costAdjustTriggerResult, abilityCostResult, targetResolver)
         ];
 
         if (abilityCostResult.canCancel) {
+            modelOptions.push({ kind: 'cancel', command: 'menuButton', args: [] });
             choices.push('Cancel');
             handlers.push(() => {
                 abilityCostResult.cancelled = true;
@@ -281,11 +285,15 @@ export abstract class TargetedCostAdjuster extends CostAdjusterWithGameSteps {
 
         // add normal play option if available
         if (canPlayWithoutAdjuster) {
+            modelOptions.unshift({ kind: 'choose_option', optionKey: `cost.${this.costPropertyName}.skip`, costUnknown: true, command: 'menuButton', args: [] });
             choices.unshift(this.doNotUseAdjusterButtonText);
             handlers.unshift(() => undefined);
         }
 
         context.game.promptWithHandlerMenu(this.getPayingPlayer(context), {
+            modelPrompt: context.game.modelStateEnabled ? { family: 'option', rootActorId: context.player.id,
+                source: modelSource(context.source, this.getPayingPlayer(context)),
+                options: modelOptions.map((option, index) => ({ ...option, args: [index] })) } : undefined,
             activePromptTitle: `Choose pay mode for ${context.source.title}`,
             choices,
             handlers

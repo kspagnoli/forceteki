@@ -17,6 +17,7 @@ export abstract class DisplayCardPrompt<TProperties extends IDisplayCardPromptPr
     private readonly promptTitle: string;
     protected readonly source: OngoingEffectSourceBase;
     private readonly selectCardMode: SelectCardMode;
+    private modelDisplayRecorded = false;
 
     public constructor(game: Game, choosingPlayer: Player, properties: TProperties, selectCardMode: SelectCardMode) {
         super(game);
@@ -45,6 +46,14 @@ export abstract class DisplayCardPrompt<TProperties extends IDisplayCardPromptPr
         this.menuTitle = properties.activePromptTitle as string | null;
 
         this.selectCardMode = selectCardMode;
+    }
+
+    public override continue(): boolean {
+        if (!this.isComplete() && this.game.modelStateEnabled && !this.modelDisplayRecorded) {
+            this.game.recordModelDisplay(this.choosingPlayer, this.properties.displayCards);
+            this.modelDisplayRecorded = true;
+        }
+        return super.continue();
     }
 
     protected modelDisplayContext(player: Player): Pick<IModelPrompt, 'source' | 'displayCards'> {

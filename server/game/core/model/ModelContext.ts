@@ -98,6 +98,11 @@ export class ModelContext {
         }
     }
 
+    /** A display prompt itself grants these identities to its recipient. */
+    public recordDisplay(viewer: Player, cards: Card[]): void {
+        this.remember(viewer.id, cards);
+    }
+
     public snapshot(viewer: Player, visibleIds: Set<string>) {
         return {
             phasePlaysComplete: true,

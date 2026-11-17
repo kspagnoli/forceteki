@@ -25,6 +25,18 @@ describe('Opt-in model observation ledger', () => {
         expect(ledger.snapshot(players[0], new Set()).rememberedCards[0].position).toBeNull();
     });
 
+    it('retains an explicit display grant only for its recipient without asserting a current position', () => {
+        const { ledger, players, card } = fixture();
+        ledger.recordDisplay(players[0], [card, card]);
+        ledger.recordDisplay(players[0], [card]);
+        const memory = ledger.snapshot(players[0], new Set()).rememberedCards;
+        expect(memory.length).toBe(1);
+        expect(memory[0].copiesLowerBound).toBe(1);
+        expect(memory[0].certainty).toBe('historical');
+        expect(memory[0].position).toBeNull();
+        expect(ledger.snapshot(players[1], new Set()).rememberedCards.length).toBe(0);
+    });
+
     it('records public reveals for both seats without counting repeated views as new copies', () => {
         const { game, ledger, players, card } = fixture();
         game.emit(EventName.OnCardRevealed, { cards: [card, { ...card, uuid: 'second-copy' }] });

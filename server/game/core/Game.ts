@@ -1834,6 +1834,11 @@ export class Game extends EventEmitter {
         this.modelContext = new ModelContext(this);
     }
 
+    /** Called by the display lifecycle, never by state observation. */
+    public recordModelDisplay(viewer: Player, cards: Card[]): void {
+        this.modelContext?.recordDisplay(viewer, cards);
+    }
+
     /** Read-only actor-scoped source for a separately implemented learning adapter. */
     public getModelState(playerId: string) {
         Contract.assertNotNullLike(this.modelContext, 'Model observation is not enabled');
