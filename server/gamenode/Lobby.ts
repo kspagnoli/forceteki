@@ -171,6 +171,9 @@ export class Lobby {
     private allowSpectators = false;
 
     private game?: Game;
+    private researchModelEnabled = false;
+    private researchRevision = 0;
+
     public users: LobbyUserWrapper[] = [];
     public spectators: LobbySpectatorWrapper[] = [];
     private lobbyOwnerId: string;
@@ -633,9 +636,12 @@ export class Lobby {
 
         // we check if listeners for the events already exist
         if (socket.eventContainsListener('game') || socket.eventContainsListener('lobby')) {
-            socket.removeEventsListeners(['game', 'lobby']);
+            socket.removeEventsListeners(['game', 'lobby', 'researchModel']);
         }
 
+        if (process.env.LAB_MODEL_TRANSPORT === '1' && process.env.NODE_ENV === 'development') {
+            socket.registerEvent('researchModel', (peer, request, acknowledge) => this.onResearchModelMessage(peer, request, acknowledge));
+        }
         socket.registerEvent('game', (socket, command, ...args) => this.onGameMessage(socket, command, ...args));
         socket.registerEvent('lobby', (socket, command, ...args) => this.onLobbyMessage(socket, command, ...args));
 
@@ -1415,6 +1421,9 @@ export class Lobby {
                 game.selectDeck(user.id, user.deck);
                 game.attachLobbyUser(user.id, user.socket.user);
             });
+            if (this.researchModelEnabled) {
+                game.enableModelState();
+            }
             await game.initialiseAsync();
             this.sendLobbyState(true);
             this.sendGameState(game);
@@ -1602,10 +1611,10 @@ export class Lobby {
             owner: 'Order66',
             format: this.gameFormat,
             players,
-            undoMode: this.undoMode,
+            undoMode: this.researchModelEnabled ? UndoMode.Disabled : this.undoMode,
             cardDataGetter: this.cardDataGetter,
             legalCardTitles: this.deckValidator.getLegalCardTitles(this.gameFormat, this.cardPool),
-            useActionTimer: this.useActionTimers,
+            useActionTimer: this.researchModelEnabled ? false : this.useActionTimers,
             preselectedFirstPlayerId: this.determineFirstPlayer(),
             pushUpdate: () => this.sendGameState(this.game),
             scheduler: this.scheduler,
@@ -1703,6 +1712,48 @@ export class Lobby {
         }
     }
 
+    // Explicit local-development transport; seat identity always comes from the connected socket.
+    private onResearchModelMessage(socket: Socket, request: any, acknowledge: any): void {
+        if (typeof acknowledge !== 'function') {
+            return;
+        }
+        try {
+            Contract.assertTrue(process.env.LAB_MODEL_TRANSPORT === '1' && process.env.NODE_ENV === 'development', 'Research transport disabled');
+            const address = socket.socket.handshake.address;
+            Contract.assertTrue(['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(address), 'Research transport is loopback only');
+            const id = socket.user.getId();
+            const user = this.users.find((user) => user.id === id);
+            Contract.assertTrue(!!user && user.socket.id === socket.id && this.isPrivate, 'Current private-lobby player required');
+            if (request?.action === 'enable') {
+                Contract.assertTrue(id === this.lobbyOwnerId && !this.game, 'Enable before the owner starts the game');
+                Contract.assertTrue(this.gameFormat === SwuGameFormat.Eternal && this.users.length <= 2, 'Only two-player Eternal is supported');
+                this.researchModelEnabled = true;
+                acknowledge({ ok: true });
+                return;
+            }
+            Contract.assertTrue(this.researchModelEnabled && !!this.game && !this.game.isEnded, 'No active research game');
+            const prompt = this.game.getCurrentOpenPrompt();
+            Contract.assertTrue(!!prompt && prompt.activeCondition(this.game.getPlayerById(id)), 'Seat is not prompted');
+            const at = { gameEpoch: this.game.id, revision: this.researchRevision, promptToken: prompt.uuid, actorId: id };
+            if (request?.action === 'read') {
+                acknowledge({ ok: true, frame: { ...this.game.getModelState(id), at } });
+                return;
+            }
+            Contract.assertTrue(request?.action === 'respond', 'Unknown research action');
+            Contract.assertTrue(JSON.stringify(request.at) === JSON.stringify(at), 'Stale research response');
+            const args = request.args;
+            Contract.assertTrue(Array.isArray(args) && ['cardClicked', 'menuButton', 'perCardMenuButton', 'statefulPromptResults'].includes(args[0]), 'Unsupported research response');
+            this.researchRevision++;
+            this.updateUserLastActivity(id);
+            (this.game[args[0]] as Function).call(this.game, id, ...args.slice(1));
+            this.game.continue();
+            this.sendGameState(this.game);
+            acknowledge({ ok: true });
+        } catch (error) {
+            acknowledge({ ok: false, error: error.message });
+        }
+    }
+
     private async onGameMessage(socket: Socket, command: string, ...args): Promise<void> {
         const start = process.hrtime.bigint();
 
@@ -1733,6 +1784,7 @@ export class Lobby {
                 return;
             }
 
+            this.researchRevision++;
             await this.game[command](socket.user.getId(), ...args);
 
             this.game.continue();
@@ -2496,6 +2548,7 @@ export class Lobby {
 
         switch (settingName) {
             case LobbySettingKeys.RequestUndo:
+                Contract.assertFalse(this.researchModelEnabled, 'Undo is unavailable in model research games');
                 this.assertSettingType(settingName, settingValue, 'boolean');
                 this.undoMode = settingValue ? UndoMode.Request : UndoMode.Free;
                 this.gameChat.addAlert(AlertType.Warning, `${user.username} has ${settingValue ? 'enabled' : 'disabled'} undo confirmation`);
