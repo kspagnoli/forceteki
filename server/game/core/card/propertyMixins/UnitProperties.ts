@@ -814,7 +814,7 @@ export function WithUnitProperties<TBaseClass extends InPlayCardConstructor>(Bas
             if (hasRestore) {
                 const restoreAmount = this.getNumericKeywordTotal(KeywordName.Restore);
                 const restoreProps = Object.assign(this.buildGeneralAbilityProps('keyword_restore'), RestoreAbility.buildRestoreAbilityProperties(restoreAmount));
-                const restoreAbility = this.createTriggeredAbility(restoreProps);
+                const restoreAbility = this.createTriggeredAbility({ ...restoreProps, modelKeyword: 'restore' });
                 restoreAbility.registerEvents();
                 this._attackKeywordAbilities = [...this._attackKeywordAbilities, restoreAbility];
             }

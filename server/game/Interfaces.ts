@@ -131,7 +131,7 @@ export interface IOngoingCardEffectProps extends IOngoingEffectProps<Card> {
 export interface IAbilityProps<TContext extends AbilityContext> {
     title: string;
     /** Opt-in identity metadata set by the built-in keyword registrar. */
-    modelKeyword?: 'ambush' | 'shielded' | 'saboteur';
+    modelKeyword?: 'ambush' | 'shielded' | 'saboteur' | 'restore';
     /** Stable source-scoped identity for a producer whose engine ability identifier is ambiguous. */
     modelIdentifier?: string;
     modelAbilityOrigin?: Card;

@@ -1849,10 +1849,26 @@ export class Game extends EventEmitter {
         // Reuse player visibility without consuming chat or animation delivery cursors.
         const players = Object.fromEntries(this.getPlayers().map((player) => {
             const summary = player.getStateSummary(viewer);
+            // Selectable concealed cards need opaque bindings, never identity enrichment.
+            // These zones use the same order as Player.getSummaryForZone.
+            const opaqueSelections = (zone: ZoneName, rows: typeof summary.cardPiles.hand) => {
+                const cards = player.getCardsInZone(zone);
+                return rows.map((row, index) => {
+                    if (!row.id && !row.uuid && (row.selectable || row.selected)) {
+                        return { ...row, uuid: cards[index].uuid };
+                    }
+                    return row;
+                });
+            };
+            const cardPiles = { ...summary.cardPiles,
+                hand: opaqueSelections(ZoneName.Hand, summary.cardPiles.hand),
+                resources: opaqueSelections(ZoneName.Resource, summary.cardPiles.resources),
+                capturedZone: opaqueSelections(ZoneName.Capture, summary.cardPiles.capturedZone),
+                forceTokens: summary.forceToken.active ? [player.baseZone.forceToken.getSummary(viewer)] : [] };
             return [player.id, { id: player.id, hasInitiative: summary.hasInitiative,
                 hasForceToken: summary.forceToken.active, credits: summary.credits.length,
                 availableResources: summary.availableResources, numCardsInDeck: summary.numCardsInDeck,
-                cardPiles: { ...summary.cardPiles, forceTokens: summary.forceToken.active ? [player.baseZone.forceToken.getSummary(viewer)] : [] }, leaders: summary.leaders, base: summary.base,
+                cardPiles, leaders: summary.leaders, base: summary.base,
                 promptState: player === viewer ? summary.promptState : undefined }];
         }));
         const state = { id: this.id, players, phase: this.currentPhase,

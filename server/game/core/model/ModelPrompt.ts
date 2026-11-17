@@ -76,7 +76,7 @@ export function modelAbilityKey(ability: PlayerOrCardAbility, player: Player): s
         return modelPlayAbilityKey(ability, player);
     }
     // This metadata is set only by the keyword registrar, including when a keyword is gained.
-    if (ability.isCardAbilityStep() && ['ambush', 'shielded', 'saboteur'].includes(ability.modelKeyword)) {
+    if (ability.isCardAbilityStep() && ['ambush', 'shielded', 'saboteur', 'restore'].includes(ability.modelKeyword)) {
         return `keyword.${ability.modelKeyword}`;
     }
     if (ability.isCardAbilityStep()) {
