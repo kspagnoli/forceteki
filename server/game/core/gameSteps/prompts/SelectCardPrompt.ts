@@ -1,5 +1,5 @@
 import { AbilityContext } from '../../ability/AbilityContext';
-import { modelSource } from '../../model/ModelPrompt';
+import { modelAbilityKey, modelSource } from '../../model/ModelPrompt';
 import type { IModelPrompt } from '../../model/ModelPrompt';
 import type { Card } from '../../card/Card';
 import type { BaseCardSelector } from '../../cardSelector/BaseCardSelector';
@@ -192,6 +192,7 @@ export class SelectCardPrompt extends UiPrompt {
             options.push({ kind, command: 'menuButton', args: [button.arg, this.uuid] });
         }
         return { family: 'target', options, source: modelSource(this.source, player), rootActorId: this.context.player.id,
+            targetContext: { abilityKey: modelAbilityKey(this.context.ability, player), source: modelSource(this.context.source, player), stage: this.context.stage },
             selection: { ...bounds, ordered: this.properties.selectOrder ?? false, selectedIds: this.selectedCards.map((card) => card.uuid),
                 canConfirm: options.some((option) => option.kind === 'confirm'), canCancel: options.some((option) => option.kind === 'cancel'),
                 canDecline: options.some((option) => option.kind === 'decline') || bounds.min === 0 } };

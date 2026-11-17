@@ -24,6 +24,9 @@ export interface IModelPrompt {
     family: string;
     options: IModelOption[];
     abilityKey?: string;
+
+    /** Typed requesting ability and resolution stage; adapters opt in through their input profile. */
+    targetContext?: { abilityKey?: string; source?: IModelPrompt['source']; stage?: string };
     displayCards?: { id: string; uuid: string; ownerId: string; controllerId: string; zone: 'display' }[];
     selection?: {
         domain?: 'entities' | 'options';
