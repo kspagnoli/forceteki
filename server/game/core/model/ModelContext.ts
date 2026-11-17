@@ -65,7 +65,7 @@ export class ModelContext {
         });
     }
 
-    private remember(viewerId: string, cards: Card[] = []) {
+    private remember(viewerId: string, cards: Card[] = [], zoneOverride?: string) {
         const memory = this.memories.get(viewerId);
         if (!memory) {
             return;
@@ -78,12 +78,13 @@ export class ModelContext {
             }
             seenInstances.add(card.uuid);
             // Only this explicit view/reveal event grants access to these identities.
-            const key = `${card.owner.id}:${card.id}:${card.zoneName}`;
+            const zone = zoneOverride ?? card.zoneName;
+            const key = `${card.owner.id}:${card.id}:${zone}`;
             const existing = batch.get(key);
             if (existing) {
                 existing.copiesLowerBound++;
             } else {
-                batch.set(key, { cardKey: card.id, ownerId: card.owner.id, zone: card.zoneName,
+                batch.set(key, { cardKey: card.id, ownerId: card.owner.id, zone,
                     certainty: 'historical', copiesLowerBound: 1, seenRound: this.game.roundNumber });
             }
         }
@@ -100,7 +101,7 @@ export class ModelContext {
 
     /** A display prompt itself grants these identities to its recipient. */
     public recordDisplay(viewer: Player, cards: Card[]): void {
-        this.remember(viewer.id, cards);
+        this.remember(viewer.id, cards, 'display');
     }
 
     public snapshot(viewer: Player, visibleIds: Set<string>) {

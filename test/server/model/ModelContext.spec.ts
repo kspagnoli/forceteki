@@ -30,6 +30,7 @@ describe('Opt-in model observation ledger', () => {
         ledger.recordDisplay(players[0], [card, card]);
         ledger.recordDisplay(players[0], [card]);
         const memory = ledger.snapshot(players[0], new Set()).rememberedCards;
+        expect(memory[0].zone).toBe('display');
         expect(memory.length).toBe(1);
         expect(memory[0].copiesLowerBound).toBe(1);
         expect(memory[0].certainty).toBe('historical');
