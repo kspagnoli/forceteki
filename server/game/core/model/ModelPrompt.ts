@@ -18,6 +18,12 @@ export interface IModelOption {
     hasLegalEffects?: boolean;
     quantity?: number;
     costUnknown?: boolean;
+
+    /** Only attachment play actions are previewed. Other legal actions remain explicitly counted. */
+    attachmentPreview?: {
+        otherActionCount: number;
+        options: { abilityKey?: string; abilityOriginId?: string; targetIds: string[] | null }[];
+    };
 }
 
 export interface IModelPrompt {

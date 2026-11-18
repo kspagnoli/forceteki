@@ -1,3 +1,4 @@
+import { modelAttachmentPreview } from '../model/ModelActionContext';
 import { modelAbilityOriginId, modelAbilityKey, modelSource } from '../model/ModelPrompt';
 import type { IModelPrompt } from '../model/ModelPrompt';
 import { UiPrompt } from './prompts/UiPrompt.js';
@@ -57,7 +58,8 @@ export class ActionWindow extends UiPrompt {
             .map((button) => ({ kind: button.arg === 'pass' ? 'pass' : button.arg === 'claimInitiative' ? 'claim_initiative' : 'unsupported',
                 command: 'menuButton', args: [button.arg, this.uuid] }));
         for (const card of cardsWithLegalActions) {
-            options.push({ kind: 'select_source', sourceId: card.uuid, command: 'cardClicked', args: [card.uuid] });
+            options.push({ kind: 'select_source', sourceId: card.uuid, command: 'cardClicked', args: [card.uuid],
+                attachmentPreview: modelAttachmentPreview(this.getCardLegalActions(card, this.activePlayer), this.activePlayer) });
         }
         return { family: 'action_window', options };
     }
@@ -99,7 +101,8 @@ export class ActionWindow extends UiPrompt {
                 const sourceCard = gainAbilitySource ?? card;
                 return {
                     modelOption: this.game.modelStateEnabled ? { kind: 'choose_ability', command: 'menuButton', args: [],
-                        sourceId: card.uuid, abilityOriginId: modelAbilityOriginId(action, player), abilityKey: modelAbilityKey(action, player), costUnknown: true } : undefined,
+                        sourceId: card.uuid, abilityOriginId: modelAbilityOriginId(action, player), abilityKey: modelAbilityKey(action, player), costUnknown: true,
+                        attachmentPreview: modelAttachmentPreview([action], player) } : undefined,
                     title: action.getTitle(context),
                     sourceCard: getTriggerSourceCardSummary(sourceCard),
                     hasLegalEffects: action.hasAnyLegalEffects(context, SubStepCheck.All),
@@ -113,8 +116,12 @@ export class ActionWindow extends UiPrompt {
     }
 
     private resolveAbility(context: AbilityContext) {
+        // Capture only what the acting player can see before the card changes zones.
+        const source = this.game.modelStateEnabled ? modelSource(context.source, context.player) : undefined;
+        const abilityKey = this.game.modelStateEnabled ? modelAbilityKey(context.ability, context.player) : undefined;
         const resolver = this.game.resolveAbility(context);
         this.game.queueSimpleStep(() => {
+            this.game.recordModelActionAttempt(context.player.id, source, abilityKey, resolver.cancelled, resolver.resolutionCommitted);
             if (resolver.resolutionCommitted) {
                 this.postResolutionUpdate(resolver);
             }

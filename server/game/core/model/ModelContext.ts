@@ -1,3 +1,4 @@
+import type { IModelPrompt } from './ModelPrompt';
 import type { Game } from '../Game';
 import type { Card } from '../card/Card';
 import type { Player } from '../Player';
@@ -21,6 +22,10 @@ interface IMemoryFact {
 
 /** Opt-in observer. It never changes rules, randomness, prompt state or card visibility. */
 export class ModelContext {
+    private attempts = new Map<string, { total: number; entries: {
+        source: IModelPrompt['source']; abilityKey?: string; cancelled: boolean;
+    }[]; }>();
+
     private plays = new Map<string, IPlayFact[]>();
     private memories = new Map<string, Map<string, IMemoryFact>>();
     private knownTops = new Map<string, Map<string, { cardKey: string; deckRevision: number; seenRound: number }>>();
@@ -30,6 +35,7 @@ export class ModelContext {
     public constructor(private readonly game: Game, private readonly orderedDeckMemory: boolean | string[] = false) {
         this.orderedDeckMemory = Array.isArray(orderedDeckMemory) ? [...orderedDeckMemory] : orderedDeckMemory;
         for (const player of game.getPlayers()) {
+            this.attempts.set(player.id, { total: 0, entries: [] });
             this.knownTops.set(player.id, new Map());
             this.plays.set(player.id, []);
             this.memories.set(player.id, new Map());
@@ -38,6 +44,7 @@ export class ModelContext {
             for (const plays of this.plays.values()) {
                 plays.length = 0;
             }
+            this.clearActionAttempts();
             this.lastAction = null;
             this.claimActor = null;
         });
@@ -51,6 +58,7 @@ export class ModelContext {
         });
         game.on(EventName.OnClaimInitiative, (event) => this.claimActor = event.player.id);
         game.on(EventName.OnActionTaken, (event) => {
+            this.clearActionAttempts();
             const kind = this.claimActor === event.player.id ? 'claim_initiative'
                 : game.prevActionPhasePlayerPassed ? 'pass' : 'other';
             this.lastAction = kind === 'other' ? null : { actorId: event.player.id, kind };
@@ -66,6 +74,27 @@ export class ModelContext {
                 this.remember(player.id, event.cards);
             }
         });
+    }
+
+    private clearActionAttempts(): void {
+        for (const attempts of this.attempts.values()) {
+            attempts.total = 0;
+            attempts.entries.length = 0;
+        }
+    }
+
+    /** Private, uncommitted action attempts in this action window; bounded storage has explicit omission counts. */
+    public recordActionAttempt(playerId: string, source: IModelPrompt['source'], abilityKey: string | undefined,
+        cancelled: boolean, resolutionCommitted: boolean): void {
+        if (resolutionCommitted) {
+            return;
+        }
+        const attempts = this.attempts.get(playerId);
+        attempts.total++;
+        attempts.entries.push({ source, abilityKey, cancelled });
+        if (attempts.entries.length > 32) {
+            attempts.entries.shift();
+        }
     }
 
     private remember(viewerId: string, cards: Card[] = [], zoneOverride?: string) {
@@ -123,7 +152,16 @@ export class ModelContext {
     }
 
     public snapshot(viewer: Player, visibleIds: Set<string>) {
+        const attempts = this.attempts.get(viewer.id);
         return {
+            actionAttempts: {
+                scope: 'current_action_window' as const,
+                total: attempts.total,
+                omitted: attempts.total - attempts.entries.length,
+                entries: attempts.entries.map((attempt) => ({ ...attempt,
+                    source: attempt.source ? { ...attempt.source,
+                        instanceId: visibleIds.has(attempt.source.instanceId) ? attempt.source.instanceId : null } : null }))
+            },
             phasePlaysComplete: true,
             abilityUsesComplete: false,
             memoryCompleteness: 'partial',

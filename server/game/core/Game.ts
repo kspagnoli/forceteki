@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { ModelContext } from './model/ModelContext';
+import type { IModelPrompt } from './model/ModelPrompt';
 
 import type { IScheduler } from '../../utils/IScheduler';
 import { GameChat } from './chat/GameChat';
@@ -1832,6 +1833,12 @@ export class Game extends EventEmitter {
         Contract.assertFalse(this.isUndoEnabled, 'Model observation does not yet support undo');
         Contract.assertIsNullLike(this.modelContext, 'Model observation is already enabled');
         this.modelContext = new ModelContext(this, orderedDeckMemory);
+    }
+
+    /** The action window reports only completed attempts; model reads remain side-effect free. */
+    public recordModelActionAttempt(playerId: string, source: IModelPrompt['source'], abilityKey: string | undefined,
+        cancelled: boolean, resolutionCommitted: boolean): void {
+        this.modelContext?.recordActionAttempt(playerId, source, abilityKey, cancelled, resolutionCommitted);
     }
 
     /** An explicit top-card look or keep-on-top effect grants this knowledge to its recipient only. */

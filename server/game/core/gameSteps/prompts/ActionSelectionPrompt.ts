@@ -103,6 +103,10 @@ export class ActionSelectionPrompt extends UiPrompt {
 
     public override menuCommand(_player: Player, arg: string): boolean {
         if (arg === 'cancel') {
+            // No resolver was started: preserve the private source, with no chosen ability.
+            if (this.properties.modelSource) {
+                this.game.recordModelActionAttempt(this.player.id, this.properties.modelSource, undefined, true, false);
+            }
             this.complete();
             return true;
         }
